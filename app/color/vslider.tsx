@@ -13,6 +13,7 @@ type Props = {
   onChange: (v: number) => void;
   trackBg?: string;
   className?: string;
+  handleClassName?: string;
 };
 
 export default function VSlider({
@@ -24,6 +25,7 @@ export default function VSlider({
   onChange,
   trackBg,
   className,
+  handleClassName,
 }: Props) {
   const elRef = useRef<HTMLDivElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
@@ -125,7 +127,10 @@ export default function VSlider({
         style={{ background: trackBg ?? "var(--muted)" }}
       />
       <div
-        className="pointer-events-none absolute left-1/2 h-3.5 w-3.5 -translate-x-1/2 translate-y-1/2 rounded-full bg-white"
+        className={cn(
+          "pointer-events-none absolute left-1/2 h-3.5 w-3.5 -translate-x-1/2 translate-y-1/2 rounded-full bg-white",
+          handleClassName,
+        )}
         style={{ bottom: `${ratio * 100}%` }}
       />
     </div>

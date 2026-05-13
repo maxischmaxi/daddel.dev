@@ -3,14 +3,15 @@
 import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 
 import {
-  createTeamGame,
-  fetchTeamLobby,
-  postGlobalScore,
-  postTeamScore,
-  type GlobalRanking,
-  type TeamLobby,
+  createSoundTeamGame,
+  fetchSoundTeamLobby,
+  postSoundGlobalScore,
+  postSoundTeamScore,
+  type SoundGlobalRanking,
+  type SoundTeamLobby,
 } from "@/lib/api-client";
 import { trackEvent } from "@/lib/analytics-client";
+import { armAudioOnFirstGesture } from "@/lib/audio";
 import {
   getClientId,
   getStoredName,
@@ -18,30 +19,31 @@ import {
   setStoredName,
 } from "@/lib/player";
 
+import { sliderToFreq, SLIDER_MAX } from "./frequency";
 import {
-  type Color,
-  type GameMode,
-  PREP_SEQUENCE,
-  ROUNDS,
-  SHOW_MS,
   gameReducer,
   initialState,
+  PREP_SEQUENCE,
   randomTarget,
+  ROUNDS,
   scoreRound,
+  SHOW_MS,
+  type GameMode,
+  type Sound,
 } from "./game-state";
-import { getRandomQuip } from "./quips";
+import { useToneOscillator } from "./use-tone-oscillator";
 
-const INITIAL_HSL: Color = { h: 180, s: 50, l: 50 };
+const INITIAL_SLIDER = Math.round(SLIDER_MAX / 2);
 
 export type SubmissionState = "idle" | "sending" | "done" | "error";
 
-export type ColorGameOptions = {
+export type SoundGameOptions = {
   mode?: GameMode;
   gameId?: string;
-  initialTargets?: Color[];
+  initialTargets?: Sound[];
 };
 
-export function useColorGame(options: ColorGameOptions = {}) {
+export function useSoundGame(options: SoundGameOptions = {}) {
   const {
     mode: initialMode = "solo",
     gameId: presetGameId,
@@ -50,12 +52,11 @@ export function useColorGame(options: ColorGameOptions = {}) {
 
   const [mode, setMode] = useState<GameMode>(initialMode);
   const [state, dispatch] = useReducer(gameReducer, initialState);
-  const [hsl, setHsl] = useState<Color>(INITIAL_HSL);
+  const [slider, setSlider] = useState<number>(INITIAL_SLIDER);
   const [prepText, setPrepText] = useState("");
   const [targetVisible, setTargetVisible] = useState(false);
   const [prepStep, setPrepStep] = useState<number | null>(null);
   const [endTimeMs, setEndTimeMs] = useState<number | null>(null);
-  const [currentQuip, setCurrentQuip] = useState("");
   const [playerName, setPlayerName] = useState<string | null>(null);
 
   const [submissionState, setSubmissionState] =
@@ -64,27 +65,26 @@ export function useColorGame(options: ColorGameOptions = {}) {
   const [teamShareId, setTeamShareId] = useState<string | null>(
     presetGameId ?? null,
   );
-  const [teamLobby, setTeamLobby] = useState<TeamLobby | null>(null);
-  const [globalRanking, setGlobalRanking] = useState<GlobalRanking | null>(
-    null,
-  );
+  const [teamLobby, setTeamLobby] = useState<SoundTeamLobby | null>(null);
+  const [globalRanking, setGlobalRanking] =
+    useState<SoundGlobalRanking | null>(null);
 
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const submittedRef = useRef(false);
-  const phaseRef = useRef(state.phase);
 
-  useEffect(() => {
-    phaseRef.current = state.phase;
-  }, [state.phase]);
+  const {
+    start: toneStart,
+    setFreq: toneSetFreq,
+    stop: toneStop,
+    analyserRef: toneAnalyserRef,
+  } = useToneOscillator();
+  const toneStartedRef = useRef(false);
 
   useEffect(() => {
     setPlayerName(getStoredName());
+    armAudioOnFirstGesture();
   }, []);
 
-  // Restore final state on mount for team-participant: if this client already
-  // submitted a score, jump directly to the final-lobby view instead of
-  // forcing them to replay the rounds. If the user has already started a new
-  // round by the time the fetch resolves, leave their game intact.
   useEffect(() => {
     if (initialMode !== "team-participant" || !presetGameId) return;
     if (typeof window === "undefined") return;
@@ -92,23 +92,23 @@ export function useColorGame(options: ColorGameOptions = {}) {
     (async () => {
       try {
         const clientId = getClientId();
-        const lobby = await fetchTeamLobby(presetGameId, clientId);
+        const lobby = await fetchSoundTeamLobby(presetGameId, clientId);
         if (cancelled) return;
-        const phase = phaseRef.current;
-        if (phase !== "idle" && phase !== "name-entry") return;
         if (lobby.your) {
           submittedRef.current = true;
           setTeamLobby(lobby);
           setSubmissionState("done");
+          const targets: Sound[] = lobby.targets.map((freq) => ({ freq }));
+          const guesses: Sound[] = lobby.your.guesses.map((freq) => ({ freq }));
           dispatch({
             type: "RESTORE_FINAL",
-            targets: lobby.targets,
-            guesses: lobby.your.guesses,
+            targets,
+            guesses,
             scores: lobby.your.scores,
           });
         }
       } catch {
-        /* ignore — page will just show the idle / name-entry flow */
+        /* ignore */
       }
     })();
     return () => {
@@ -124,7 +124,7 @@ export function useColorGame(options: ColorGameOptions = {}) {
   }, []);
 
   const nextTarget = useCallback(
-    (round: number): Color => {
+    (round: number): Sound => {
       if (initialTargets && initialTargets[round]) return initialTargets[round];
       return randomTarget();
     },
@@ -139,7 +139,7 @@ export function useColorGame(options: ColorGameOptions = {}) {
       setPrepStep(null);
       setEndTimeMs(null);
       if (state.phase === "pick") {
-        setHsl(INITIAL_HSL);
+        setSlider(INITIAL_SLIDER);
         setPrepText("");
       }
       return;
@@ -154,8 +154,15 @@ export function useColorGame(options: ColorGameOptions = {}) {
       setPrepStep(null);
       setTargetVisible(true);
       setEndTimeMs(performance.now() + SHOW_MS);
+      const target = state.targets[state.round];
+      if (target) {
+        toneStart(target.freq);
+        toneStartedRef.current = true;
+      }
       timeoutRef.current = setTimeout(() => {
         clearTimers();
+        toneStop();
+        toneStartedRef.current = false;
         dispatch({ type: "ENTER_PICK" });
       }, SHOW_MS);
     };
@@ -178,8 +185,39 @@ export function useColorGame(options: ColorGameOptions = {}) {
       revealTarget();
     }
 
-    return clearTimers;
-  }, [state.phase, state.round, clearTimers]);
+    return () => {
+      clearTimers();
+      if (toneStartedRef.current) {
+        toneStop();
+        toneStartedRef.current = false;
+      }
+    };
+  }, [
+    state.phase,
+    state.round,
+    state.targets,
+    clearTimers,
+    toneStart,
+    toneStop,
+  ]);
+
+  useEffect(() => {
+    if (state.phase !== "pick") return;
+    toneStart(sliderToFreq(slider));
+    toneStartedRef.current = true;
+    return () => {
+      toneStop();
+      toneStartedRef.current = false;
+    };
+    // Only run when phase enters "pick"; slider updates handled separately below.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.phase]);
+
+  useEffect(() => {
+    if (state.phase !== "pick") return;
+    if (!toneStartedRef.current) return;
+    toneSetFreq(sliderToFreq(slider));
+  }, [slider, state.phase, toneSetFreq]);
 
   const beginPlay = useCallback(() => {
     clearTimers();
@@ -201,14 +239,14 @@ export function useColorGame(options: ColorGameOptions = {}) {
       const m = nextMode ?? mode;
       setMode(m);
       if (m === "solo") {
-        trackEvent("game_started", { game: "color", mode: m });
+        trackEvent("game_started", { game: "sound", mode: m });
         beginPlay();
         return;
       }
       const name = getStoredName();
       if (name) {
         setPlayerName(name);
-        trackEvent("game_started", { game: "color", mode: m });
+        trackEvent("game_started", { game: "sound", mode: m });
         beginPlay();
       } else {
         clearTimers();
@@ -224,7 +262,7 @@ export function useColorGame(options: ColorGameOptions = {}) {
       if (clean.length === 0) return;
       setStoredName(clean);
       setPlayerName(clean);
-      trackEvent("game_started", { game: "color", mode });
+      trackEvent("game_started", { game: "sound", mode });
       beginPlay();
     },
     [beginPlay, mode],
@@ -238,7 +276,6 @@ export function useColorGame(options: ColorGameOptions = {}) {
     setTeamLobby(null);
     setGlobalRanking(null);
     if (initialMode === "team-participant") {
-      // For participants we always stay in participant flow until navigation away.
       dispatch({ type: "RESET" });
     } else {
       setMode("solo");
@@ -251,16 +288,25 @@ export function useColorGame(options: ColorGameOptions = {}) {
     if (state.phase !== "pick") return;
     clearTimers();
     const target = state.targets[state.round];
-    const points = scoreRound(target, hsl);
-    setCurrentQuip(getRandomQuip(points));
-    dispatch({ type: "SUBMIT_GUESS", guess: hsl, points });
-  }, [clearTimers, hsl, state.phase, state.round, state.targets]);
+    const guess: Sound = { freq: sliderToFreq(slider) };
+    const points = scoreRound(target, guess);
+    toneStop();
+    toneStartedRef.current = false;
+    dispatch({ type: "SUBMIT_GUESS", guess, points });
+  }, [
+    clearTimers,
+    slider,
+    state.phase,
+    state.round,
+    state.targets,
+    toneStop,
+  ]);
 
   const advance = useCallback(() => {
     if (state.phase !== "reveal") return;
     if (state.round + 1 >= ROUNDS) {
       const total = state.scores.reduce((a, b) => a + b, 0);
-      trackEvent("game_finished", { game: "color", mode, totalScore: total });
+      trackEvent("game_finished", { game: "sound", mode, totalScore: total });
       dispatch({ type: "FINISH" });
     } else {
       dispatch({ type: "NEXT_ROUND", target: nextTarget(state.round + 1) });
@@ -270,7 +316,6 @@ export function useColorGame(options: ColorGameOptions = {}) {
   const totalScore = state.scores.reduce((a, b) => a + b, 0);
   const displayedRound = Math.min(state.round + 1, ROUNDS);
 
-  // Submission side-effect on final phase.
   const runSubmission = useCallback(async () => {
     if (submittedRef.current) return;
     submittedRef.current = true;
@@ -282,47 +327,57 @@ export function useColorGame(options: ColorGameOptions = {}) {
     }
     setSubmissionState("sending");
     setSubmissionError(null);
+    const targetsHz = state.targets.map((t) => t.freq);
+    const guessesHz = state.guesses.map((g) => g.freq);
     try {
       if (mode === "global") {
         const clientId = getClientId();
-        const result = await postGlobalScore({
+        const result = await postSoundGlobalScore({
           name: name!,
           clientId,
-          targets: state.targets,
-          guesses: state.guesses,
+          total: totalScore,
+          targets: targetsHz,
+          scores: state.scores,
+          guesses: guessesHz,
         });
         setGlobalRanking(result);
       } else if (mode === "team-creator") {
         const clientId = getClientId();
-        const { id } = await createTeamGame({
+        const { id } = await createSoundTeamGame({
           name: name!,
           clientId,
-          targets: state.targets,
-          guesses: state.guesses,
+          targets: targetsHz,
+          creatorScore: {
+            total: totalScore,
+            scores: state.scores,
+            guesses: guessesHz,
+          },
         });
         setTeamShareId(id);
         if (typeof window !== "undefined") {
           try {
-            window.history.replaceState({}, "", `/color/t/${id}`);
+            window.history.replaceState({}, "", `/sound/t/${id}`);
           } catch {
             /* ignore */
           }
         }
-        const lobby = await fetchTeamLobby(id, clientId);
+        const lobby = await fetchSoundTeamLobby(id, clientId);
         setTeamLobby(lobby);
       } else if (mode === "team-participant" && presetGameId) {
         const clientId = getClientId();
         try {
-          const lobby = await postTeamScore(presetGameId, {
+          const lobby = await postSoundTeamScore(presetGameId, {
             name: name!,
             clientId,
-            guesses: state.guesses,
+            total: totalScore,
+            scores: state.scores,
+            guesses: guessesHz,
           });
           setTeamLobby(lobby);
         } catch (err) {
           const e = err as Error & { status?: number };
           if (e.status === 409) {
-            const lobby = await fetchTeamLobby(presetGameId, clientId);
+            const lobby = await fetchSoundTeamLobby(presetGameId, clientId);
             setTeamLobby(lobby);
           } else {
             throw err;
@@ -331,19 +386,27 @@ export function useColorGame(options: ColorGameOptions = {}) {
       }
       setSubmissionState("done");
     } catch (err) {
-      console.error("submission failed", err);
+      console.error("sound submission failed", err);
       submittedRef.current = false;
       setSubmissionState("error");
       setSubmissionError(
         err instanceof Error ? err.message : "Unbekannter Fehler",
       );
       trackEvent("score_submission_failed", {
-        game: "color",
+        game: "sound",
         mode,
         reason: err instanceof Error ? err.message : "unknown",
       });
     }
-  }, [mode, playerName, presetGameId, state.guesses, state.targets]);
+  }, [
+    mode,
+    playerName,
+    presetGameId,
+    state.guesses,
+    state.scores,
+    state.targets,
+    totalScore,
+  ]);
 
   useEffect(() => {
     if (state.phase !== "final") return;
@@ -360,15 +423,14 @@ export function useColorGame(options: ColorGameOptions = {}) {
   return {
     state,
     mode,
-    hsl,
-    setHsl,
+    slider,
+    setSlider,
     prepText,
     targetVisible,
     prepStep,
     endTimeMs,
     totalScore,
     displayedRound,
-    currentQuip,
     playerName,
     startGame,
     confirmName,
@@ -381,5 +443,6 @@ export function useColorGame(options: ColorGameOptions = {}) {
     teamLobby,
     globalRanking,
     retrySubmission,
+    analyserRef: toneAnalyserRef,
   };
 }

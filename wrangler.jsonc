@@ -8,6 +8,20 @@
     "directory": ".open-next/assets",
     "binding": "ASSETS"
   },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "daddel-color",
+      "database_id": "88dfdf0d-210e-4577-8c88-c944f61b8c4f",
+      "migrations_dir": "drizzle/migrations"
+    }
+  ],
+  "analytics_engine_datasets": [
+    {
+      "binding": "ANALYTICS",
+      "dataset": "daddel_events"
+    }
+  ],
   "observability": {
     "enabled": true
   }

@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1778702470944,
+      "tag": "0000_same_lily_hollister",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1778704956485,
+      "tag": "0001_silly_quicksilver",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1778705930438,
+      "tag": "0002_nervous_lady_mastermind",
+      "breakpoints": true
+    }
+  ]
+}

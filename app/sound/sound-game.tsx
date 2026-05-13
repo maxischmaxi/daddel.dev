@@ -1,23 +1,23 @@
 "use client";
 
 import { Check, ChevronRight, Globe, User, Users } from "lucide-react";
-import { type CSSProperties, useEffect, useState } from "react";
 
+import { CountdownDisplay } from "@/app/color/countdown-display";
+import { NameEntry } from "@/app/color/name-entry";
+import { useHoverEarthquake } from "@/app/color/use-hover-earthquake";
+import { useHoverTone, type ToneSpec } from "@/app/color/use-hover-tone";
+import VSlider from "@/app/color/vslider";
 import { Button } from "@/components/ui/button";
-import { readStoredClientId } from "@/lib/player";
 import { cn } from "@/lib/utils";
 
-import { CountdownDisplay } from "./countdown-display";
 import { FinalGlobal } from "./final-global";
 import { FinalSolo } from "./final-solo";
-import { FinalTeam } from "./final-team";
-import { type Color, type GameMode, hslCss } from "./game-state";
-import { NameEntry } from "./name-entry";
-import { AURORA_GRADIENT, CUBE_ACTION_BASE } from "./shared-styles";
-import { useColorGame } from "./use-color-game";
-import { useHoverEarthquake } from "./use-hover-earthquake";
-import { useHoverTone, type ToneSpec } from "./use-hover-tone";
-import VSlider from "./vslider";
+import { FinalTeamCreator } from "./final-team-creator";
+import { FinalTeamParticipant } from "./final-team-participant";
+import { centsBetween, formatHz, sliderToFreq, SLIDER_MAX } from "./frequency";
+import { type GameMode, type Sound } from "./game-state";
+import { useSoundGame } from "./use-sound-game";
+import { WaveformVisualizer } from "./waveform-visualizer";
 
 const SINGLEPLAYER_TONE: readonly ToneSpec[] = [
   { startFreq: 220, endFreq: 880, rampSeconds: 4 },
@@ -29,8 +29,11 @@ const MULTIPLAYER_TONE: readonly ToneSpec[] = [
   { startFreq: 392.0, endFreq: 1567.98, rampSeconds: 4 },
 ];
 
-const HUE_TRACK_BG =
-  "linear-gradient(to top, hsl(0,100%,50%), hsl(60,100%,50%), hsl(120,100%,50%), hsl(180,100%,50%), hsl(240,100%,50%), hsl(300,100%,50%), hsl(360,100%,50%))";
+const CUBE_ACTION_BASE =
+  "rounded-full bg-white text-cube-dark border border-[hsl(220_13%_78%)] shadow-[0_1px_2px_rgba(0,0,0,0.06)] hover:bg-[hsl(210_40%_96.1%)] hover:text-cube-dark active:scale-[0.96] focus-visible:outline-none focus-visible:shadow-[0_0_0_2px_var(--background),0_0_0_4px_var(--ring)] transition-all duration-150";
+
+const AURORA_GRADIENT =
+  "conic-gradient(from var(--aurora-angle), hsl(0,100%,60%), hsl(60,100%,60%), hsl(120,100%,50%), hsl(180,100%,50%), hsl(240,100%,65%), hsl(300,100%,60%), hsl(360,100%,60%))";
 
 function IdleActions({
   onSolo,
@@ -105,11 +108,6 @@ function IdleActions({
           style={{ animationDelay: "0.6s" }}
           className="pointer-events-none absolute inset-0 rounded-full border-2 border-fuchsia-300 opacity-0 motion-safe:group-hover:animate-pulse-ring"
         />
-        <span
-          aria-hidden="true"
-          style={{ animationDelay: "1.2s" }}
-          className="pointer-events-none absolute inset-0 rounded-full border-2 border-amber-300 opacity-0 motion-safe:group-hover:animate-pulse-ring"
-        />
         <Users
           aria-hidden="true"
           strokeWidth={2.25}
@@ -153,29 +151,28 @@ function IdleActions({
   );
 }
 
-export type ColorGameProps = {
+export type SoundGameProps = {
   mode?: GameMode;
   gameId?: string;
-  initialTargets?: Color[];
+  initialTargets?: Sound[];
 };
 
-export default function ColorGame({
+export default function SoundGame({
   mode: initialMode,
   gameId,
   initialTargets,
-}: ColorGameProps = {}) {
+}: SoundGameProps = {}) {
   const {
     state,
     mode,
-    hsl,
-    setHsl,
+    slider,
+    setSlider,
     prepText,
     targetVisible,
     prepStep,
     endTimeMs,
     totalScore,
     displayedRound,
-    currentQuip,
     playerName,
     startGame,
     confirmName,
@@ -188,7 +185,8 @@ export default function ColorGame({
     teamLobby,
     globalRanking,
     retrySubmission,
-  } = useColorGame({ mode: initialMode, gameId, initialTargets });
+    analyserRef,
+  } = useSoundGame({ mode: initialMode, gameId, initialTargets });
 
   const isIdle = state.phase === "idle";
   const isNameEntry = state.phase === "name-entry";
@@ -196,30 +194,20 @@ export default function ColorGame({
   const isPick = state.phase === "pick";
   const isReveal = state.phase === "reveal";
   const isFinal = state.phase === "final";
-  const isDarkSwatch = isIdle || isNameEntry || (isShow && !targetVisible);
-
-  const cubeStyle: CSSProperties = {};
-  if (isShow && targetVisible) {
-    const target = state.targets[state.round];
-    cubeStyle.background = hslCss(target.h, target.s, target.l);
-  } else if (isPick) {
-    cubeStyle.background = hslCss(hsl.h, hsl.s, hsl.l);
-  } else if (isReveal) {
-    const target = state.targets[state.round];
-    const guess = state.guesses[state.round];
-    cubeStyle.background = `linear-gradient(135deg, ${hslCss(guess.h, guess.s, guess.l)} 50%, ${hslCss(target.h, target.s, target.l)} 50%)`;
-  }
 
   const roundPoints = state.scores[state.scores.length - 1] ?? 0;
-
-  const satTrackBg = `linear-gradient(to top, hsl(${hsl.h}, 0%, ${hsl.l}%), hsl(${hsl.h}, 100%, ${hsl.l}%))`;
-  const lightTrackBg = `linear-gradient(to top, hsl(${hsl.h}, ${hsl.s}%, 0%), hsl(${hsl.h}, ${hsl.s}%, 50%), hsl(${hsl.h}, ${hsl.s}%, 100%))`;
+  const revealTarget = isReveal ? state.targets[state.round] : null;
+  const revealGuess = isReveal ? state.guesses[state.round] : null;
+  const revealCents =
+    revealTarget && revealGuess
+      ? centsBetween(revealTarget.freq, revealGuess.freq)
+      : 0;
 
   const isParticipant = initialMode === "team-participant";
   const onHome = () => {
     if (
       typeof window !== "undefined" &&
-      window.location.pathname.startsWith("/color/t/")
+      window.location.pathname.startsWith("/sound/t/")
     ) {
       window.location.href = "/";
       return;
@@ -227,79 +215,69 @@ export default function ColorGame({
     resetToIdle();
   };
 
-  const idleTitle = isParticipant ? "Du wurdest eingeladen" : "color";
+  const idleTitle = isParticipant ? "Du wurdest eingeladen" : "sound";
   const idleDescription = isParticipant ? (
     <>
       <br />
-      Errate dieselben fünf Farben wie der Ersteller.
+      Errate dieselben fünf Töne wie der Ersteller.
       <br />
       Am Ende siehst du deinen Platz in der Lobby.
     </>
   ) : (
     <>
       <br />
-      Du siehst 5 Sekunden lang eine Farbe.
+      Du hörst 5 Sekunden lang einen Ton.
       <br />
-      Danach baust du sie mit drei Reglern nach.
+      Danach baust du seine Frequenz mit einem Regler nach.
       <br />
       <br />
-      Eine GPU rekonstruiert das fehlerfrei in Mikrosekunden.
+      Ein Stimmgerät trifft die Frequenz auf das Cent genau.
       <br />
       Du wirst grandios daneben liegen — genau dafür gibt es Punkte.
     </>
   );
 
-  const [localClientId, setLocalClientId] = useState<string | null>(null);
-  useEffect(() => {
-    setLocalClientId(readStoredClientId());
-  }, []);
+  const localClientId =
+    typeof window === "undefined"
+      ? null
+      : window.localStorage.getItem("browser-games:client-id");
+
+  const currentSliderHz = sliderToFreq(slider);
 
   return (
     <div
       className={cn(
-        "shadow-xl relative overflow-hidden rounded-xl bg-muted flex flex-col flex-nowrap aspect-[1/0.8] w-full max-w-125 transition-colors duration-280ms ease-out py-6 motion-safe:has-[[data-globe-rumble]:hover]:animate-earthquake",
-        isDarkSwatch && "bg-cube-dark",
-        isPick && "transition-none",
-        isFinal && "bg-cube-dark",
+        "shadow-xl relative overflow-hidden rounded-xl bg-black flex flex-col flex-nowrap aspect-[1/1.7] w-full max-w-120 motion-safe:has-[[data-globe-rumble]:hover]:animate-earthquake",
+        !isShow && !isPick && "py-6",
       )}
-      style={cubeStyle}
     >
-      {isPick && (
-        <div className="absolute inset-y-0 left-0 z-2 flex overflow-hidden rounded-l-xl">
-          <VSlider
-            id="slider-h"
-            ariaLabel="Hue"
-            min={0}
-            max={360}
-            value={hsl.h}
-            onChange={(h) => setHsl({ ...hsl, h })}
-            trackBg={HUE_TRACK_BG}
-          />
-          <VSlider
-            id="slider-s"
-            ariaLabel="Saturation"
-            min={0}
-            max={100}
-            value={hsl.s}
-            onChange={(s) => setHsl({ ...hsl, s })}
-            trackBg={satTrackBg}
-          />
-          <VSlider
-            id="slider-l"
-            ariaLabel="Lightness"
-            min={0}
-            max={100}
-            value={hsl.l}
-            onChange={(l) => setHsl({ ...hsl, l })}
-            trackBg={lightTrackBg}
-          />
+      {(isShow || isPick) && (
+        <div className="pointer-events-none absolute top-0 bottom-0 left-0 right-0 z-1 flex">
+          <div className="pointer-events-auto flex w-12 items-stretch">
+            {isPick && (
+              <VSlider
+                id="sound-freq"
+                ariaLabel="Frequenz"
+                min={0}
+                max={SLIDER_MAX}
+                value={slider}
+                onChange={setSlider}
+                trackBg="transparent"
+                className="border-r-2 border-gray-400 w-full"
+                handleClassName="size-6 shadow-[0_0_10px_rgba(255,255,255,0.6)]"
+              />
+            )}
+          </div>
+          <div className="ml-2 mr-3 flex-1 overflow-hidden">
+            <WaveformVisualizer analyserRef={analyserRef} />
+          </div>
         </div>
       )}
 
       {isIdle && (
         <>
           <div className="flex-1 min-h-0 flex flex-col items-start justify-center gap-4 px-6">
-            <h1 className="m-0 text-center text-[4rem] leading-14 font-bold tracking-tight text-white">
+            <h1 className="m-0 text-center text-[4rem] w-full leading-14 font-bold tracking-tight text-white">
               {idleTitle}
             </h1>
             <p className="tracking-tight text-white text-center w-full">
@@ -352,14 +330,29 @@ export default function ColorGame({
         />
       )}
 
-      {isReveal && (
-        <div className="flex-1 min-h-0 flex flex-col items-center justify-center gap-3 px-8 pb-16">
+      {isReveal && revealTarget && revealGuess && (
+        <div className="flex-1 min-h-0 flex flex-col items-center justify-center gap-2 px-6 pb-16">
           <p className="m-0 text-center text-5xl font-bold tabular-nums tracking-tight text-white [text-shadow:0_2px_6px_rgba(0,0,0,0.35)]">
             +<span>{roundPoints.toFixed(3)}</span>
           </p>
-          <p className="m-0 max-w-104 text-balance text-center text-[0.9375rem] font-medium leading-snug text-white/95 [text-shadow:0_1px_3px_rgba(0,0,0,0.4)]">
-            {currentQuip}
-          </p>
+          <div className="flex flex-col items-center gap-0.5 text-sm text-white/90 [text-shadow:0_1px_3px_rgba(0,0,0,0.4)]">
+            <span className="tabular-nums">
+              <span className="text-white/60">Ziel</span>{" "}
+              <span className="font-semibold">
+                {formatHz(revealTarget.freq)}
+              </span>
+            </span>
+            <span className="tabular-nums">
+              <span className="text-white/60">Du</span>{" "}
+              <span className="font-semibold">
+                {formatHz(revealGuess.freq)}
+              </span>
+            </span>
+            <span className="mt-1 text-xs tabular-nums text-white/75">
+              {revealCents >= 0 ? "+" : ""}
+              {Math.round(revealCents)} Cent
+            </span>
+          </div>
         </div>
       )}
 
@@ -387,13 +380,25 @@ export default function ColorGame({
         />
       )}
 
-      {isFinal && (mode === "team-creator" || mode === "team-participant") && (
-        <FinalTeam
-          role={mode === "team-creator" ? "creator" : "participant"}
+      {isFinal && mode === "team-creator" && (
+        <FinalTeamCreator
           totalScore={totalScore}
-          shareId={
-            mode === "team-creator" ? teamShareId : (teamLobby?.id ?? null)
-          }
+          shareId={teamShareId}
+          targets={state.targets}
+          guesses={state.guesses}
+          scores={state.scores}
+          lobby={teamLobby}
+          yourClientId={localClientId}
+          state={submissionState}
+          errorMessage={submissionError}
+          onHome={onHome}
+          onRetry={retrySubmission}
+        />
+      )}
+
+      {isFinal && mode === "team-participant" && (
+        <FinalTeamParticipant
+          totalScore={totalScore}
           targets={state.targets}
           guesses={state.guesses}
           scores={state.scores}
@@ -426,6 +431,18 @@ export default function ColorGame({
       {(isPick || isReveal) && (
         <span className="pointer-events-none absolute right-4.5 top-3.5 z-2 select-none text-base font-semibold tabular-nums text-white/95 [text-shadow:0_1px_2px_rgba(0,0,0,0.35)]">
           {displayedRound}/5
+        </span>
+      )}
+
+      {isPick && (
+        <span className="pointer-events-none absolute left-1/2 top-3.5 z-2 -translate-x-1/2 select-none rounded-full bg-white/8 px-2 py-0.5 text-xs font-semibold tabular-nums text-white/85 [text-shadow:0_1px_2px_rgba(0,0,0,0.35)]">
+          {formatHz(currentSliderHz)}
+        </span>
+      )}
+
+      {isShow && targetVisible && (
+        <span className="pointer-events-none absolute left-4 top-3.5 z-2 select-none text-sm font-medium text-white/70">
+          Hör genau hin
         </span>
       )}
 
@@ -468,9 +485,6 @@ export default function ColorGame({
               style={{ width: 22, height: 22 }}
             />
           </Button>
-          <span className="pointer-events-none absolute left-3 top-3 z-2 inline-flex items-center rounded-full border border-border bg-white/92 px-2.5 py-0.5 text-xs font-semibold leading-4 text-cube-dark backdrop-blur-xs">
-            Du
-          </span>
         </>
       )}
     </div>

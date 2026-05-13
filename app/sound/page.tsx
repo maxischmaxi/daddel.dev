@@ -1,14 +1,11 @@
 import type { Metadata } from "next";
 
+import SoundGame from "./sound-game";
+
 export const metadata: Metadata = {
   title: "Sound",
 };
 
 export default function SoundPage() {
-  return (
-    <>
-      <h1>Sound</h1>
-      <p>Hier kommt das Sound-Spiel hin.</p>
-    </>
-  );
+  return <SoundGame />;
 }
