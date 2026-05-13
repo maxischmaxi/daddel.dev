@@ -2,6 +2,21 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Datenschutz",
+  description:
+    "Informationen zu Art, Umfang und Zweck der Verarbeitung personenbezogener Daten auf daddel.dev gemäß Art. 13 DSGVO.",
+  alternates: { canonical: "/datenschutz" },
+  openGraph: {
+    type: "article",
+    url: "/datenschutz",
+    title: "Datenschutz · Daddel",
+    description: "Datenschutzerklärung gemäß Art. 13 DSGVO für daddel.dev.",
+  },
+  twitter: {
+    card: "summary",
+    title: "Datenschutz · Daddel",
+    description: "Datenschutzerklärung gemäß Art. 13 DSGVO für daddel.dev.",
+  },
+  robots: { index: true, follow: true },
 };
 
 export default function DatenschutzPage() {

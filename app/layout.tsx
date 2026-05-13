@@ -1,9 +1,10 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 
 import Footer from "@/components/footer";
 import NavMinimal from "@/components/nav-minimal";
 import { ThemeProvider } from "@/components/theme-provider";
+import { siteConfig } from "@/lib/seo";
 
 import "./globals.css";
 
@@ -17,11 +18,79 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(siteConfig.url),
   title: {
-    template: "%s · Browser Games",
-    default: "Browser Games",
+    template: `%s · ${siteConfig.name}`,
+    default: siteConfig.title,
+  },
+  description: siteConfig.description,
+  applicationName: siteConfig.name,
+  generator: "Next.js",
+  keywords: [...siteConfig.keywords],
+  authors: [{ name: siteConfig.author, url: siteConfig.url }],
+  creator: siteConfig.author,
+  publisher: siteConfig.author,
+  category: "games",
+  referrer: "strict-origin-when-cross-origin",
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    type: "website",
+    url: siteConfig.url,
+    siteName: siteConfig.name,
+    title: siteConfig.title,
+    description: siteConfig.description,
+    locale: siteConfig.locale,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: siteConfig.title,
+    description: siteConfig.description,
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1,
+    },
   },
 };
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: siteConfig.themeColorLight },
+    { media: "(prefers-color-scheme: dark)", color: siteConfig.themeColorDark },
+  ],
+  colorScheme: "light dark",
+};
+
+const websiteJsonLd = JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: siteConfig.name,
+  alternateName: "Browser Games",
+  url: siteConfig.url,
+  description: siteConfig.description,
+  inLanguage: siteConfig.language,
+  publisher: {
+    "@type": "Person",
+    name: siteConfig.author,
+    url: siteConfig.url,
+  },
+});
 
 export default function RootLayout({
   children,
@@ -29,7 +98,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="de" className={inter.variable} suppressHydrationWarning>
+    <html lang={siteConfig.language} className={inter.variable} suppressHydrationWarning>
       <body className="flex min-h-screen flex-col bg-background font-sans text-sm leading-normal text-foreground antialiased">
         <ThemeProvider
           attribute="class"
@@ -43,6 +112,7 @@ export default function RootLayout({
           </main>
           <Footer />
         </ThemeProvider>
+        <script type="application/ld+json">{websiteJsonLd}</script>
         {cfAnalyticsToken ? (
           <script
             defer

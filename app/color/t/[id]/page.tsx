@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { eq } from "drizzle-orm";
 import { notFound } from "next/navigation";
 
@@ -7,6 +8,12 @@ import { getDb } from "@/db";
 import { teamGames } from "@/db/schema";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "Team Color",
+  description: "Eine private Team-Lobby für das Color-Spiel.",
+  robots: { index: false, follow: false, nocache: true },
+};
 
 export default async function TeamGamePage({
   params,

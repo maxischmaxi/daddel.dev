@@ -2,6 +2,21 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Impressum",
+  description:
+    "Anbieterkennzeichnung und Kontakt­informationen gemäß §5 TMG für daddel.dev.",
+  alternates: { canonical: "/impressum" },
+  openGraph: {
+    type: "article",
+    url: "/impressum",
+    title: "Impressum · Daddel",
+    description: "Anbieterkennzeichnung gemäß §5 TMG für daddel.dev.",
+  },
+  twitter: {
+    card: "summary",
+    title: "Impressum · Daddel",
+    description: "Anbieterkennzeichnung gemäß §5 TMG für daddel.dev.",
+  },
+  robots: { index: true, follow: true },
 };
 
 export default function ImpressumPage() {
