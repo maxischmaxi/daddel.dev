@@ -18,6 +18,7 @@ const navItems: NavItem[] = [
   { key: "color", label: "Color", href: "/" },
   { key: "sound", label: "Sound", href: "/sound" },
   { key: "time", label: "Time", href: "/time" },
+  { key: "angle", label: "Angle", href: "/angle" },
 ];
 
 const keyForPath = (path: string): string => {

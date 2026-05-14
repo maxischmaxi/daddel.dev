@@ -1,17 +1,20 @@
 import type { MetadataRoute } from "next";
 
+import { getDict, getLocale } from "@/lib/i18n/server";
 import { siteConfig } from "@/lib/seo";
 
-export default function manifest(): MetadataRoute.Manifest {
+export default async function manifest(): Promise<MetadataRoute.Manifest> {
+  const dict = await getDict();
+  const locale = await getLocale();
   return {
     name: `${siteConfig.name} · Browser Games`,
     short_name: siteConfig.shortName,
-    description: siteConfig.description,
+    description: dict.meta.siteDescription,
     start_url: "/",
     scope: "/",
     display: "standalone",
     orientation: "portrait",
-    lang: siteConfig.language,
+    lang: locale,
     background_color: siteConfig.themeColorDark,
     theme_color: siteConfig.themeColorDark,
     categories: ["games", "entertainment"],

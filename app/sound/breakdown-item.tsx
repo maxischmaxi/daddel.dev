@@ -1,3 +1,8 @@
+"use client";
+
+import { interpolate } from "@/lib/i18n/interpolate";
+import { useDict } from "@/lib/i18n/use-t";
+
 import {
   centsBetween,
   formatHz,
@@ -22,6 +27,7 @@ export default function BreakdownItem({
   guess,
   points,
 }: Props) {
+  const dict = useDict();
   const targetRatio = freqToSlider(target.freq) / SLIDER_MAX;
   const guessRatio = freqToSlider(guess.freq) / SLIDER_MAX;
   const cents = centsBetween(target.freq, guess.freq);
@@ -29,7 +35,10 @@ export default function BreakdownItem({
   return (
     <li
       className="flex items-center gap-2 py-1 sm:gap-3 sm:py-1.5"
-      aria-label={`Runde ${index + 1}: ${points.toFixed(3)} Punkte`}
+      aria-label={interpolate(dict.playerRow.roundAriaTemplate, {
+        round: index + 1,
+        points: points.toFixed(3),
+      })}
     >
       <span className="w-5 shrink-0 text-right text-xs tabular-nums text-muted-foreground sm:w-6">
         {index + 1}.
@@ -53,10 +62,12 @@ export default function BreakdownItem({
       </div>
       <div className="flex min-w-0 flex-1 flex-col text-[0.7rem] leading-tight text-muted-foreground sm:text-xs">
         <span className="tabular-nums">
-          <span className="text-foreground">Ziel</span> {formatHz(target.freq)}
+          <span className="text-foreground">{dict.game.sound.targetLabel}</span>{" "}
+          {formatHz(target.freq)}
         </span>
         <span className="tabular-nums">
-          <span className="text-foreground">Du</span> {formatHz(guess.freq)}
+          <span className="text-foreground">{dict.game.sound.youLabel}</span>{" "}
+          {formatHz(guess.freq)}
           <span className="text-muted-foreground/70">
             {" "}
             · {cents >= 0 ? "+" : ""}

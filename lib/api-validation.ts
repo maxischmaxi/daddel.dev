@@ -163,3 +163,15 @@ export function parseDurationArray(v: unknown, length: number): number[] {
     return n;
   });
 }
+
+export function parseAngleDeg(v: unknown): number {
+  if (!isFiniteNumber(v) || v < 0 || v >= 360)
+    throw new ValidationError("invalid angle");
+  return v;
+}
+
+export function parseAngleArray(v: unknown, length: number): number[] {
+  if (!Array.isArray(v) || v.length !== length)
+    throw new ValidationError(`expected angle array of length ${length}`);
+  return v.map(parseAngleDeg);
+}

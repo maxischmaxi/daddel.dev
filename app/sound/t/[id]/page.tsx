@@ -6,14 +6,18 @@ import SoundGame from "@/app/sound/sound-game";
 import { type Sound } from "@/app/sound/game-state";
 import { getDb } from "@/db";
 import { soundTeamGames } from "@/db/schema";
+import { getDict } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "Team Sound",
-  description: "Eine private Team-Lobby für das Sound-Spiel.",
-  robots: { index: false, follow: false, nocache: true },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const dict = await getDict();
+  return {
+    title: dict.meta.teamSoundTitle,
+    description: dict.meta.teamSoundDescription,
+    robots: { index: false, follow: false, nocache: true },
+  };
+}
 
 export default async function SoundTeamGamePage({
   params,

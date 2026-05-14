@@ -11,7 +11,9 @@ import {
   type SoundTeamLobby,
 } from "@/lib/api-client";
 import { trackEvent } from "@/lib/analytics-client";
+import { useAnalyticsSession } from "@/lib/use-analytics-session";
 import { armAudioOnFirstGesture, unlockAudio } from "@/lib/audio";
+import { useDict, useLocale } from "@/lib/i18n/use-t";
 import {
   getClientId,
   getStoredName,
@@ -50,7 +52,13 @@ export function useSoundGame(options: SoundGameOptions = {}) {
     initialTargets,
   } = options;
 
+  const dict = useDict();
+  const { locale } = useLocale();
+  const missingNameMsg = dict.common.missingName;
+  const unknownErrorMsg = dict.common.unknownError;
+
   const [mode, setMode] = useState<GameMode>(initialMode);
+  const session = useAnalyticsSession({ game: "sound", mode, locale });
   const [state, dispatch] = useReducer(gameReducer, initialState);
   const [slider, setSlider] = useState<number>(INITIAL_SLIDER);
   const [prepText, setPrepText] = useState("");
@@ -236,21 +244,23 @@ export function useSoundGame(options: SoundGameOptions = {}) {
       const m = nextMode ?? mode;
       setMode(m);
       if (m === "solo") {
-        trackEvent("game_started", { game: "sound", mode: m });
+        session.begin();
+        trackEvent("game_started", { game: "sound", mode: m, locale });
         beginPlay();
         return;
       }
       const name = getStoredName();
       if (name) {
         setPlayerName(name);
-        trackEvent("game_started", { game: "sound", mode: m });
+        session.begin();
+        trackEvent("game_started", { game: "sound", mode: m, locale });
         beginPlay();
       } else {
         clearTimers();
         dispatch({ type: "ENTER_NAME_ENTRY" });
       }
     },
-    [beginPlay, clearTimers, mode],
+    [beginPlay, clearTimers, locale, mode, session],
   );
 
   const confirmName = useCallback(
@@ -260,10 +270,11 @@ export function useSoundGame(options: SoundGameOptions = {}) {
       if (clean.length === 0) return;
       setStoredName(clean);
       setPlayerName(clean);
-      trackEvent("game_started", { game: "sound", mode });
+      session.begin();
+      trackEvent("game_started", { game: "sound", mode, locale });
       beginPlay();
     },
-    [beginPlay, mode],
+    [beginPlay, locale, mode, session],
   );
 
   const resetToIdle = useCallback(() => {
@@ -304,12 +315,19 @@ export function useSoundGame(options: SoundGameOptions = {}) {
     if (state.phase !== "reveal") return;
     if (state.round + 1 >= ROUNDS) {
       const total = state.scores.reduce((a, b) => a + b, 0);
-      trackEvent("game_finished", { game: "sound", mode, totalScore: total });
+      const durationMs = session.end();
+      trackEvent("game_finished", {
+        game: "sound",
+        mode,
+        totalScore: total,
+        durationMs,
+        locale,
+      });
       dispatch({ type: "FINISH" });
     } else {
       dispatch({ type: "NEXT_ROUND", target: nextTarget(state.round + 1) });
     }
-  }, [mode, nextTarget, state.phase, state.round, state.scores]);
+  }, [locale, mode, nextTarget, session, state.phase, state.round, state.scores]);
 
   const totalScore = state.scores.reduce((a, b) => a + b, 0);
   const displayedRound = Math.min(state.round + 1, ROUNDS);
@@ -320,7 +338,7 @@ export function useSoundGame(options: SoundGameOptions = {}) {
     const name = playerName ?? getStoredName();
     if (mode !== "solo" && !name) {
       setSubmissionState("error");
-      setSubmissionError("Name fehlt");
+      setSubmissionError(missingNameMsg);
       return;
     }
     setSubmissionState("sending");
@@ -388,15 +406,18 @@ export function useSoundGame(options: SoundGameOptions = {}) {
       submittedRef.current = false;
       setSubmissionState("error");
       setSubmissionError(
-        err instanceof Error ? err.message : "Unbekannter Fehler",
+        err instanceof Error ? err.message : unknownErrorMsg,
       );
       trackEvent("score_submission_failed", {
         game: "sound",
         mode,
+        locale,
         reason: err instanceof Error ? err.message : "unknown",
       });
     }
   }, [
+    locale,
+    missingNameMsg,
     mode,
     playerName,
     presetGameId,
@@ -404,6 +425,7 @@ export function useSoundGame(options: SoundGameOptions = {}) {
     state.scores,
     state.targets,
     totalScore,
+    unknownErrorMsg,
   ]);
 
   useEffect(() => {

@@ -4,6 +4,8 @@ import { Home, RotateCcw } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import type { SoundGlobalRanking } from "@/lib/api-client";
+import { interpolate } from "@/lib/i18n/interpolate";
+import { useDict } from "@/lib/i18n/use-t";
 import { cn } from "@/lib/utils";
 
 import { useBingClick } from "@/app/color/use-click-tone";
@@ -34,6 +36,7 @@ export function FinalGlobal({
   onReplay,
   onRetry,
 }: Props) {
+  const dict = useDict();
   const handleHomeClick = useBingClick<HTMLButtonElement>(onHome);
   const handleReplayClick = useBingClick<HTMLButtonElement>(onReplay);
   const handleRetryClick = useBingClick<HTMLButtonElement>(onRetry);
@@ -45,7 +48,7 @@ export function FinalGlobal({
     <div className="flex flex-1 min-h-0 flex-col gap-2 px-4 sm:gap-3 sm:px-5">
       <div className="flex flex-col items-center gap-0.5">
         <h2 className="m-0 text-xs font-semibold uppercase tracking-[0.18em] text-white/60">
-          Global
+          {dict.final.global.label}
         </h2>
         <div className="flex items-baseline gap-1.5">
           <span className="text-4xl font-bold leading-none tracking-tight tabular-nums text-white sm:text-5xl">
@@ -57,28 +60,31 @@ export function FinalGlobal({
         </div>
         {ranking?.you && (
           <p className="m-0 text-xs font-medium text-white/60">
-            Platz {ranking.you.rank} von {ranking.total}
+            {interpolate(dict.final.global.rankTemplate, {
+              rank: ranking.you.rank,
+              total: ranking.total,
+            })}
           </p>
         )}
       </div>
 
       {state === "sending" && (
         <p className="px-2 py-2 text-center text-xs text-white/60">
-          Score wird übertragen …
+          {dict.final.global.scoreSending}
         </p>
       )}
 
       {state === "error" && (
         <div className="flex flex-col items-center gap-2 px-2 py-3">
           <p className="text-center text-xs text-red-400">
-            Übertragung fehlgeschlagen: {errorMessage ?? "Unbekannter Fehler"}
+            {dict.final.global.sendFailed}: {errorMessage ?? dict.common.unknownError}
           </p>
           <button
             type="button"
             onClick={handleRetryClick}
             className="rounded-md border border-white/30 bg-transparent px-2 py-1 text-xs font-medium text-white hover:bg-white/10"
           >
-            Erneut versuchen
+            {dict.common.retry}
           </button>
         </div>
       )}
@@ -143,7 +149,7 @@ export function FinalGlobal({
           size="icon"
           className={cn(CUBE_ACTION_BASE, "size-14 sm:size-16")}
           type="button"
-          aria-label="Zur Startseite"
+          aria-label={dict.common.home}
           onClick={handleHomeClick}
         >
           <Home
@@ -157,7 +163,7 @@ export function FinalGlobal({
           size="icon"
           className={cn(CUBE_ACTION_BASE, "size-14 sm:size-16")}
           type="button"
-          aria-label="Nochmal spielen"
+          aria-label={dict.common.replay}
           onClick={handleReplayClick}
         >
           <RotateCcw

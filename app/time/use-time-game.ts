@@ -11,7 +11,9 @@ import {
   type TimeTeamLobby,
 } from "@/lib/api-client";
 import { trackEvent } from "@/lib/analytics-client";
+import { useAnalyticsSession } from "@/lib/use-analytics-session";
 import { armAudioOnFirstGesture, unlockAudio } from "@/lib/audio";
+import { useDict, useLocale } from "@/lib/i18n/use-t";
 import {
   getClientId,
   getStoredName,
@@ -47,7 +49,13 @@ export function useTimeGame(options: TimeGameOptions = {}) {
     initialTargets,
   } = options;
 
+  const dict = useDict();
+  const { locale } = useLocale();
+  const missingNameMsg = dict.common.missingName;
+  const unknownErrorMsg = dict.common.unknownError;
+
   const [mode, setMode] = useState<GameMode>(initialMode);
+  const session = useAnalyticsSession({ game: "time", mode, locale });
   const [state, dispatch] = useReducer(gameReducer, initialState);
   const [prepText, setPrepText] = useState("");
   const [targetVisible, setTargetVisible] = useState(false);
@@ -236,21 +244,23 @@ export function useTimeGame(options: TimeGameOptions = {}) {
       const m = nextMode ?? mode;
       setMode(m);
       if (m === "solo") {
-        trackEvent("game_started", { game: "time", mode: m });
+        session.begin();
+        trackEvent("game_started", { game: "time", mode: m, locale });
         beginPlay();
         return;
       }
       const name = getStoredName();
       if (name) {
         setPlayerName(name);
-        trackEvent("game_started", { game: "time", mode: m });
+        session.begin();
+        trackEvent("game_started", { game: "time", mode: m, locale });
         beginPlay();
       } else {
         clearTimers();
         dispatch({ type: "ENTER_NAME_ENTRY" });
       }
     },
-    [beginPlay, clearTimers, mode],
+    [beginPlay, clearTimers, locale, mode, session],
   );
 
   const confirmName = useCallback(
@@ -260,10 +270,11 @@ export function useTimeGame(options: TimeGameOptions = {}) {
       if (clean.length === 0) return;
       setStoredName(clean);
       setPlayerName(clean);
-      trackEvent("game_started", { game: "time", mode });
+      session.begin();
+      trackEvent("game_started", { game: "time", mode, locale });
       beginPlay();
     },
-    [beginPlay, mode],
+    [beginPlay, locale, mode, session],
   );
 
   const resetToIdle = useCallback(() => {
@@ -342,12 +353,19 @@ export function useTimeGame(options: TimeGameOptions = {}) {
     if (state.phase !== "reveal") return;
     if (state.round + 1 >= ROUNDS) {
       const total = state.scores.reduce((a, b) => a + b, 0);
-      trackEvent("game_finished", { game: "time", mode, totalScore: total });
+      const durationMs = session.end();
+      trackEvent("game_finished", {
+        game: "time",
+        mode,
+        totalScore: total,
+        durationMs,
+        locale,
+      });
       dispatch({ type: "FINISH" });
     } else {
       dispatch({ type: "NEXT_ROUND", target: nextTarget(state.round + 1) });
     }
-  }, [mode, nextTarget, state.phase, state.round, state.scores]);
+  }, [locale, mode, nextTarget, session, state.phase, state.round, state.scores]);
 
   const totalScore = state.scores.reduce((a, b) => a + b, 0);
   const displayedRound = Math.min(state.round + 1, ROUNDS);
@@ -358,7 +376,7 @@ export function useTimeGame(options: TimeGameOptions = {}) {
     const name = playerName ?? getStoredName();
     if (mode !== "solo" && !name) {
       setSubmissionState("error");
-      setSubmissionError("Name fehlt");
+      setSubmissionError(missingNameMsg);
       return;
     }
     setSubmissionState("sending");
@@ -425,15 +443,18 @@ export function useTimeGame(options: TimeGameOptions = {}) {
       submittedRef.current = false;
       setSubmissionState("error");
       setSubmissionError(
-        err instanceof Error ? err.message : "Unbekannter Fehler",
+        err instanceof Error ? err.message : unknownErrorMsg,
       );
       trackEvent("score_submission_failed", {
         game: "time",
         mode,
+        locale,
         reason: err instanceof Error ? err.message : "unknown",
       });
     }
   }, [
+    locale,
+    missingNameMsg,
     mode,
     playerName,
     presetGameId,
@@ -441,6 +462,7 @@ export function useTimeGame(options: TimeGameOptions = {}) {
     state.scores,
     state.targets,
     totalScore,
+    unknownErrorMsg,
   ]);
 
   useEffect(() => {

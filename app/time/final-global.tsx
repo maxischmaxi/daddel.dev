@@ -7,6 +7,8 @@ import { FinalCard } from "@/app/color/final-card";
 import { useBingClick } from "@/app/color/use-click-tone";
 import { HOME_TONE, REPLAY_TONE } from "@/app/color/final-tones";
 import type { TimeGlobalRanking } from "@/lib/api-client";
+import { interpolate } from "@/lib/i18n/interpolate";
+import { useDict } from "@/lib/i18n/use-t";
 
 import { PlayerBreakdownRow } from "./player-row";
 
@@ -31,6 +33,7 @@ export function FinalGlobal({
   onReplay,
   onRetry,
 }: Props) {
+  const dict = useDict();
   const handleRetryClick = useBingClick<HTMLButtonElement>(onRetry);
   const youInTop = ranking?.you
     ? ranking.top.some((r) => r.clientId === yourClientId)
@@ -38,7 +41,10 @@ export function FinalGlobal({
 
   const subInfo = ranking?.you ? (
     <p className="m-0 text-xs font-medium text-white/60">
-      Platz {ranking.you.rank} von {ranking.total}
+      {interpolate(dict.final.global.rankTemplate, {
+        rank: ranking.you.rank,
+        total: ranking.total,
+      })}
     </p>
   ) : undefined;
 
@@ -46,20 +52,20 @@ export function FinalGlobal({
     <>
       {state === "sending" && (
         <p className="px-2 py-2 text-center text-xs text-white/60">
-          Score wird übertragen …
+          {dict.final.global.scoreSending}
         </p>
       )}
       {state === "error" && (
         <div className="flex flex-col items-center gap-2 px-2 py-3">
           <p className="text-center text-xs text-red-400">
-            Übertragung fehlgeschlagen: {errorMessage ?? "Unbekannter Fehler"}
+            {dict.final.global.sendFailed}: {errorMessage ?? dict.common.unknownError}
           </p>
           <button
             type="button"
             onClick={handleRetryClick}
             className="rounded-md border border-white/30 bg-transparent px-2 py-1 text-xs font-medium text-white hover:bg-white/10"
           >
-            Erneut versuchen
+            {dict.common.retry}
           </button>
         </div>
       )}
@@ -68,13 +74,13 @@ export function FinalGlobal({
 
   return (
     <FinalCard
-      label="Global"
+      label={dict.final.global.label}
       totalScore={totalScore}
       subInfo={subInfo}
       statusBlock={statusBlock}
       leftAction={
         <AuroraActionButton
-          ariaLabel="Zur Startseite"
+          ariaLabel={dict.common.home}
           tone={HOME_TONE}
           onClick={onHome}
           rings={
@@ -93,7 +99,7 @@ export function FinalGlobal({
       }
       rightAction={
         <AuroraActionButton
-          ariaLabel="Nochmal spielen"
+          ariaLabel={dict.common.replay}
           tone={REPLAY_TONE}
           onClick={onReplay}
           rings={

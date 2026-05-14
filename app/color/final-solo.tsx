@@ -2,19 +2,24 @@
 
 import { Home, RotateCcw } from "lucide-react";
 
+import { useDict } from "@/lib/i18n/use-t";
+
 import { AuroraActionButton } from "./aurora-action-button";
 import { FinalCard } from "./final-card";
 import { HOME_TONE, REPLAY_TONE } from "./final-tones";
 import { type Color } from "./game-state";
 import { PlayerBreakdownRow } from "./player-row";
 
-function getFinalLabel(score: number): string {
-  if (score >= 42) return "Farb-Maestro";
-  if (score >= 34) return "Beeindruckend";
-  if (score >= 25) return "Stark unterwegs";
-  if (score >= 17) return "Solide";
-  if (score >= 8) return "Da geht noch was";
-  return "Erstmal warmlaufen";
+function getFinalLabel(
+  score: number,
+  tiers: readonly [string, string, string, string, string, string],
+): string {
+  if (score >= 42) return tiers[0];
+  if (score >= 34) return tiers[1];
+  if (score >= 25) return tiers[2];
+  if (score >= 17) return tiers[3];
+  if (score >= 8) return tiers[4];
+  return tiers[5];
 }
 
 type Props = {
@@ -34,9 +39,10 @@ export function FinalSolo({
   onHome,
   onReplay,
 }: Props) {
+  const dict = useDict();
   return (
     <FinalCard
-      label="Geschafft"
+      label={dict.final.solo.label}
       totalScore={totalScore}
       subInfo={
         <div className="flex items-center gap-2 text-sm">
@@ -44,13 +50,13 @@ export function FinalSolo({
             {Math.round((totalScore / 50) * 100)}%
           </span>
           <span className="font-medium text-white/60">
-            {getFinalLabel(totalScore)}
+            {getFinalLabel(totalScore, dict.final.solo.tiersColor)}
           </span>
         </div>
       }
       leftAction={
         <AuroraActionButton
-          ariaLabel="Zur Startseite"
+          ariaLabel={dict.common.home}
           tone={HOME_TONE}
           onClick={onHome}
           rings={
@@ -69,7 +75,7 @@ export function FinalSolo({
       }
       rightAction={
         <AuroraActionButton
-          ariaLabel="Nochmal spielen"
+          ariaLabel={dict.common.replay}
           tone={REPLAY_TONE}
           onClick={onReplay}
           rings={
@@ -98,7 +104,7 @@ export function FinalSolo({
         <ol className="m-0 flex flex-1 min-h-0 list-none flex-col gap-0.5 overflow-auto p-0">
           <PlayerBreakdownRow
             rank={1}
-            name="Du"
+            name={dict.common.you}
             totalScore={totalScore}
             scores={scores}
             guesses={guesses}

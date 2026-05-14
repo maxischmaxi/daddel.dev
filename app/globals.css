@@ -237,7 +237,8 @@
     width: min(100%, 31.25rem, max(18rem, calc((100dvh - 9rem) / 1.05)));
   }
 
-  .game-shell-sound {
+  .game-shell-sound,
+  .game-shell-angle {
     width: min(100%, 30rem, max(17rem, calc((100vh - 9rem) / 1.7)));
     width: min(100%, 30rem, max(17rem, calc((100dvh - 9rem) / 1.7)));
   }
@@ -249,7 +250,8 @@
       width: min(100%, 31.25rem, max(18rem, calc((100dvh - 11rem) / 0.8)));
     }
 
-    .game-shell-sound {
+    .game-shell-sound,
+    .game-shell-angle {
       width: min(100%, 30rem, max(17rem, calc((100vh - 11rem) / 1.7)));
       width: min(100%, 30rem, max(17rem, calc((100dvh - 11rem) / 1.7)));
     }

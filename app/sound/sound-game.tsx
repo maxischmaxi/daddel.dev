@@ -11,6 +11,7 @@ import { useHoverTone, type ToneSpec } from "@/app/color/use-hover-tone";
 import VSlider from "@/app/color/vslider";
 import { AnimatedScore } from "@/components/animated-score";
 import { Button } from "@/components/ui/button";
+import { useDict } from "@/lib/i18n/use-t";
 import { cn } from "@/lib/utils";
 
 import { FinalGlobal } from "./final-global";
@@ -47,6 +48,7 @@ function IdleActions({
   onTeam: () => void;
   onGlobal: () => void;
 }) {
+  const dict = useDict();
   const singleplayerHoverTone = useHoverTone(SINGLEPLAYER_TONE);
   const multiplayerHoverTone = useHoverTone(MULTIPLAYER_TONE);
   const globeHoverEarthquake = useHoverEarthquake();
@@ -61,7 +63,7 @@ function IdleActions({
         size="icon"
         className={cn(CUBE_ACTION_BASE, "group relative size-14 sm:size-16")}
         type="button"
-        aria-label="Einzelspieler"
+        aria-label={dict.common.soloAria}
         onClick={handleSoloClick}
         {...singleplayerHoverTone}
       >
@@ -91,7 +93,7 @@ function IdleActions({
         size="icon"
         className={cn(CUBE_ACTION_BASE, "group relative size-14 sm:size-16")}
         type="button"
-        aria-label="Mehrspieler"
+        aria-label={dict.common.teamAria}
         onClick={handleTeamClick}
         {...multiplayerHoverTone}
       >
@@ -126,7 +128,7 @@ function IdleActions({
         size="icon"
         className={cn(CUBE_ACTION_BASE, "group relative ml-auto size-14 sm:size-16")}
         type="button"
-        aria-label="Weltweit"
+        aria-label={dict.common.globalAria}
         data-globe-rumble
         onClick={handleGlobalClick}
         {...globeHoverEarthquake}
@@ -168,6 +170,7 @@ export default function SoundGame({
   gameId,
   initialTargets,
 }: SoundGameProps = {}) {
+  const dict = useDict();
   const {
     state,
     mode,
@@ -225,25 +228,27 @@ export default function SoundGame({
     startGame("team-participant"),
   );
 
-  const idleTitle = isParticipant ? "Du wurdest eingeladen" : "sound";
+  const idleTitle = isParticipant
+    ? dict.game.sound.idleInvitedTitle
+    : dict.game.sound.idleTitle;
   const idleDescription = isParticipant ? (
     <>
       <br />
-      Errate dieselben fünf Töne wie der Ersteller.
+      {dict.game.sound.teamIntro1}
       <br />
-      Am Ende siehst du deinen Platz in der Lobby.
+      {dict.game.sound.teamIntro2}
     </>
   ) : (
     <>
       <br />
-      Du hörst 5 Sekunden lang einen Ton.
+      {dict.game.sound.soloIntro1}
       <br />
-      Danach baust du seine Frequenz mit einem Regler nach.
+      {dict.game.sound.soloIntro2}
       <br />
       <br />
-      Ein Stimmgerät trifft die Frequenz auf das Cent genau.
+      {dict.game.sound.soloIntro3}
       <br />
-      Du wirst grandios daneben liegen — genau dafür gibt es Punkte.
+      {dict.game.sound.soloIntro4}
     </>
   );
 
@@ -267,7 +272,7 @@ export default function SoundGame({
             {isPick && (
               <VSlider
                 id="sound-freq"
-                ariaLabel="Frequenz"
+                ariaLabel={dict.game.sound.frequencyAria}
                 min={0}
                 max={SLIDER_MAX}
                 value={slider}
@@ -301,7 +306,7 @@ export default function SoundGame({
                 size="icon"
                 className={cn(CUBE_ACTION_BASE, "size-14 sm:size-16")}
                 type="button"
-                aria-label="Spielen"
+                aria-label={dict.common.play}
                 onClick={handleParticipantStart}
               >
                 <ChevronRight
@@ -327,15 +332,15 @@ export default function SoundGame({
           onConfirm={confirmName}
           title={
             mode === "global"
-              ? "Wie heißt du?"
+              ? dict.nameEntry.globalTitle
               : mode === "team-creator"
-                ? "Du erstellst eine Lobby"
-                : "Du trittst der Lobby bei"
+                ? dict.nameEntry.teamCreatorTitle
+                : dict.nameEntry.teamParticipantTitle
           }
           hint={
             mode === "global"
-              ? "Der Name erscheint in der globalen Rangliste."
-              : "Der Name erscheint in der Lobby."
+              ? dict.nameEntry.globalHint
+              : dict.nameEntry.teamHint
           }
         />
       )}
@@ -353,20 +358,20 @@ export default function SoundGame({
           </p>
           <div className="flex flex-col items-center gap-0.5 text-sm text-white/90 [text-shadow:0_1px_3px_rgba(0,0,0,0.4)]">
             <span className="tabular-nums">
-              <span className="text-white/60">Ziel</span>{" "}
+              <span className="text-white/60">{dict.game.sound.targetLabel}</span>{" "}
               <span className="font-semibold">
                 {formatHz(revealTarget.freq)}
               </span>
             </span>
             <span className="tabular-nums">
-              <span className="text-white/60">Du</span>{" "}
+              <span className="text-white/60">{dict.game.sound.youLabel}</span>{" "}
               <span className="font-semibold">
                 {formatHz(revealGuess.freq)}
               </span>
             </span>
             <span className="mt-1 text-xs tabular-nums text-white/75">
               {revealCents >= 0 ? "+" : ""}
-              {Math.round(revealCents)} Cent
+              {Math.round(revealCents)} {dict.game.sound.centsUnit}
             </span>
           </div>
         </div>
@@ -451,7 +456,7 @@ export default function SoundGame({
 
       {isShow && targetVisible && (
         <span className="pointer-events-none absolute left-4 top-3.5 z-2 select-none text-sm font-medium text-white/70">
-          Hör genau hin
+          {dict.game.sound.listenLabel}
         </span>
       )}
 
@@ -464,7 +469,7 @@ export default function SoundGame({
             "absolute bottom-3 right-3 z-2 size-12 sm:size-13",
           )}
           type="button"
-          aria-label="Bestätigen"
+          aria-label={dict.common.confirm}
           onClick={submitGuess}
         >
           <Check
@@ -485,7 +490,7 @@ export default function SoundGame({
               "absolute bottom-3 right-3 z-2 size-12 sm:size-13",
             )}
             type="button"
-            aria-label="Weiter"
+            aria-label={dict.common.next}
             onClick={advance}
           >
             <ChevronRight

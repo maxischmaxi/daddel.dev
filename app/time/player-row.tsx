@@ -1,3 +1,7 @@
+"use client";
+
+import { interpolate } from "@/lib/i18n/interpolate";
+import { useDict } from "@/lib/i18n/use-t";
 import { cn } from "@/lib/utils";
 
 import { MAX_DURATION_MS, type TimeTarget } from "./game-state";
@@ -24,6 +28,7 @@ export function PlayerBreakdownRow({
   targets,
   highlight,
 }: Props) {
+  const dict = useDict();
   const hasBreakdown =
     !!targets && !!guesses && !!scores && targets.length > 0;
 
@@ -63,7 +68,10 @@ export function PlayerBreakdownRow({
               <div
                 key={i}
                 className="flex flex-col items-center gap-0.5"
-                aria-label={`Runde ${i + 1}: ${pts.toFixed(3)} Punkte`}
+                aria-label={interpolate(dict.playerRow.roundAriaTemplate, {
+                  round: i + 1,
+                  points: pts.toFixed(3),
+                })}
               >
                 <span className="text-[0.5rem] font-semibold leading-none tabular-nums sm:text-[0.55rem]">
                   {pts.toFixed(2)}

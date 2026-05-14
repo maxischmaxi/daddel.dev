@@ -6,14 +6,18 @@ import ColorGame from "@/app/color/color-game";
 import { type Color } from "@/app/color/game-state";
 import { getDb } from "@/db";
 import { teamGames } from "@/db/schema";
+import { getDict } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "Team Color",
-  description: "Eine private Team-Lobby für das Color-Spiel.",
-  robots: { index: false, follow: false, nocache: true },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const dict = await getDict();
+  return {
+    title: dict.meta.teamColorTitle,
+    description: dict.meta.teamColorDescription,
+    robots: { index: false, follow: false, nocache: true },
+  };
+}
 
 export default async function TeamGamePage({
   params,

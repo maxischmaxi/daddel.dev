@@ -4,6 +4,7 @@ import { ChevronRight } from "lucide-react";
 import { useState, type FormEvent } from "react";
 
 import { Button } from "@/components/ui/button";
+import { useDict } from "@/lib/i18n/use-t";
 import { cn } from "@/lib/utils";
 import { sanitizeName } from "@/lib/player";
 
@@ -20,9 +21,12 @@ export type NameEntryProps = {
 export function NameEntry({
   onConfirm,
   initial = "",
-  title = "Wie heißt du?",
-  hint = "Der Name wird gespeichert und in der Rangliste angezeigt.",
+  title,
+  hint,
 }: NameEntryProps) {
+  const dict = useDict();
+  const resolvedTitle = title ?? dict.nameEntry.soloTitle;
+  const resolvedHint = hint ?? dict.nameEntry.soloHint;
   const [value, setValue] = useState(initial);
   const playClickTone = useClickTone();
   const clean = sanitizeName(value);
@@ -43,9 +47,9 @@ export function NameEntry({
     >
       <div className="flex flex-1 min-h-0 flex-col items-start justify-center gap-2 sm:gap-3">
         <h2 className="m-0 text-xl font-bold tracking-tight text-white sm:text-2xl">
-          {title}
+          {resolvedTitle}
         </h2>
-        <p className="m-0 text-sm leading-snug text-white/85">{hint}</p>
+        <p className="m-0 text-sm leading-snug text-white/85">{resolvedHint}</p>
         <input
           autoFocus
           type="text"
@@ -53,8 +57,8 @@ export function NameEntry({
           maxLength={32}
           value={value}
           onChange={(e) => setValue(e.target.value)}
-          placeholder="Dein Name"
-          aria-label="Dein Name"
+          placeholder={dict.nameEntry.placeholder}
+          aria-label={dict.common.yourName}
           autoComplete="off"
           autoCorrect="off"
           autoCapitalize="off"
@@ -70,7 +74,7 @@ export function NameEntry({
           type="submit"
           variant="ghost"
           size="icon"
-          aria-label="Bestätigen"
+          aria-label={dict.common.confirm}
           disabled={!canSubmit}
           className={cn(
             CUBE_ACTION_BASE,

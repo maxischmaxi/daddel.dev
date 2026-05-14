@@ -3,6 +3,7 @@
 import { Home, RotateCcw } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { useDict } from "@/lib/i18n/use-t";
 import { cn } from "@/lib/utils";
 
 import { useBingClick } from "@/app/color/use-click-tone";
@@ -27,13 +28,16 @@ const REPLAY_TONE: readonly ToneSpec[] = [
   { startFreq: 293.66, endFreq: 2349.32, rampSeconds: 0.7, type: "sawtooth" },
 ];
 
-function getFinalLabel(score: number): string {
-  if (score >= 42) return "Frequenz-Hellseher";
-  if (score >= 34) return "Beeindruckend";
-  if (score >= 25) return "Stark unterwegs";
-  if (score >= 17) return "Solide";
-  if (score >= 8) return "Da geht noch was";
-  return "Erstmal warmlaufen";
+function getFinalLabel(
+  score: number,
+  tiers: readonly [string, string, string, string, string, string],
+): string {
+  if (score >= 42) return tiers[0];
+  if (score >= 34) return tiers[1];
+  if (score >= 25) return tiers[2];
+  if (score >= 17) return tiers[3];
+  if (score >= 8) return tiers[4];
+  return tiers[5];
 }
 
 type Props = {
@@ -53,6 +57,7 @@ export function FinalSolo({
   onHome,
   onReplay,
 }: Props) {
+  const dict = useDict();
   const homeHoverTone = useHoverTone(HOME_TONE);
   const replayHoverTone = useHoverTone(REPLAY_TONE);
   const handleHomeClick = useBingClick<HTMLButtonElement>(onHome);
@@ -62,7 +67,7 @@ export function FinalSolo({
     <div className="flex flex-1 min-h-0 flex-col gap-2 px-4 sm:gap-3 sm:px-5">
       <div className="flex flex-col items-center gap-0.5">
         <h2 className="m-0 text-xs font-semibold uppercase tracking-[0.18em] text-white/60">
-          Geschafft
+          {dict.final.solo.label}
         </h2>
         <div className="flex items-baseline gap-1.5">
           <span className="text-4xl font-bold leading-none tracking-tight tabular-nums text-white sm:text-[3.25rem]">
@@ -77,7 +82,7 @@ export function FinalSolo({
             {Math.round((totalScore / 50) * 100)}%
           </span>
           <span className="font-medium text-white/70">
-            {getFinalLabel(totalScore)}
+            {getFinalLabel(totalScore, dict.final.solo.tiersSound)}
           </span>
         </div>
       </div>
@@ -102,7 +107,7 @@ export function FinalSolo({
           size="icon"
           className={cn(CUBE_ACTION_BASE, "group relative size-14 sm:size-16")}
           type="button"
-          aria-label="Zur Startseite"
+          aria-label={dict.common.home}
           onClick={handleHomeClick}
           {...homeHoverTone}
         >
@@ -132,7 +137,7 @@ export function FinalSolo({
           size="icon"
           className={cn(CUBE_ACTION_BASE, "group relative size-14 sm:size-16")}
           type="button"
-          aria-label="Nochmal spielen"
+          aria-label={dict.common.replay}
           onClick={handleReplayClick}
           {...replayHoverTone}
         >

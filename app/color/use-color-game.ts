@@ -11,6 +11,8 @@ import {
   type TeamLobby,
 } from "@/lib/api-client";
 import { trackEvent } from "@/lib/analytics-client";
+import { useAnalyticsSession } from "@/lib/use-analytics-session";
+import { useDict, useLocale } from "@/lib/i18n/use-t";
 import {
   getClientId,
   getStoredName,
@@ -48,7 +50,11 @@ export function useColorGame(options: ColorGameOptions = {}) {
     initialTargets,
   } = options;
 
+  const dict = useDict();
+  const { locale } = useLocale();
+
   const [mode, setMode] = useState<GameMode>(initialMode);
+  const session = useAnalyticsSession({ game: "color", mode, locale });
   const [state, dispatch] = useReducer(gameReducer, initialState);
   const [hsl, setHsl] = useState<Color>(INITIAL_HSL);
   const [prepText, setPrepText] = useState("");
@@ -197,21 +203,23 @@ export function useColorGame(options: ColorGameOptions = {}) {
       const m = nextMode ?? mode;
       setMode(m);
       if (m === "solo") {
-        trackEvent("game_started", { game: "color", mode: m });
+        session.begin();
+        trackEvent("game_started", { game: "color", mode: m, locale });
         beginPlay();
         return;
       }
       const name = getStoredName();
       if (name) {
         setPlayerName(name);
-        trackEvent("game_started", { game: "color", mode: m });
+        session.begin();
+        trackEvent("game_started", { game: "color", mode: m, locale });
         beginPlay();
       } else {
         clearTimers();
         dispatch({ type: "ENTER_NAME_ENTRY" });
       }
     },
-    [beginPlay, clearTimers, mode],
+    [beginPlay, clearTimers, locale, mode, session],
   );
 
   const confirmName = useCallback(
@@ -220,10 +228,11 @@ export function useColorGame(options: ColorGameOptions = {}) {
       if (clean.length === 0) return;
       setStoredName(clean);
       setPlayerName(clean);
-      trackEvent("game_started", { game: "color", mode });
+      session.begin();
+      trackEvent("game_started", { game: "color", mode, locale });
       beginPlay();
     },
-    [beginPlay, mode],
+    [beginPlay, locale, mode, session],
   );
 
   const resetToIdle = useCallback(() => {
@@ -248,20 +257,27 @@ export function useColorGame(options: ColorGameOptions = {}) {
     clearTimers();
     const target = state.targets[state.round];
     const points = scoreRound(target, hsl);
-    setCurrentQuip(getRandomQuip(points));
+    setCurrentQuip(getRandomQuip(points, dict, locale));
     dispatch({ type: "SUBMIT_GUESS", guess: hsl, points });
-  }, [clearTimers, hsl, state.phase, state.round, state.targets]);
+  }, [clearTimers, dict, hsl, locale, state.phase, state.round, state.targets]);
 
   const advance = useCallback(() => {
     if (state.phase !== "reveal") return;
     if (state.round + 1 >= ROUNDS) {
       const total = state.scores.reduce((a, b) => a + b, 0);
-      trackEvent("game_finished", { game: "color", mode, totalScore: total });
+      const durationMs = session.end();
+      trackEvent("game_finished", {
+        game: "color",
+        mode,
+        totalScore: total,
+        durationMs,
+        locale,
+      });
       dispatch({ type: "FINISH" });
     } else {
       dispatch({ type: "NEXT_ROUND", target: nextTarget(state.round + 1) });
     }
-  }, [mode, nextTarget, state.phase, state.round, state.scores]);
+  }, [locale, mode, nextTarget, session, state.phase, state.round, state.scores]);
 
   const totalScore = state.scores.reduce((a, b) => a + b, 0);
   const displayedRound = Math.min(state.round + 1, ROUNDS);
@@ -273,7 +289,7 @@ export function useColorGame(options: ColorGameOptions = {}) {
     const name = playerName ?? getStoredName();
     if (mode !== "solo" && !name) {
       setSubmissionState("error");
-      setSubmissionError("Name fehlt");
+      setSubmissionError(dict.common.missingName);
       return;
     }
     setSubmissionState("sending");
@@ -331,15 +347,16 @@ export function useColorGame(options: ColorGameOptions = {}) {
       submittedRef.current = false;
       setSubmissionState("error");
       setSubmissionError(
-        err instanceof Error ? err.message : "Unbekannter Fehler",
+        err instanceof Error ? err.message : dict.common.unknownError,
       );
       trackEvent("score_submission_failed", {
         game: "color",
         mode,
+        locale,
         reason: err instanceof Error ? err.message : "unknown",
       });
     }
-  }, [mode, playerName, presetGameId, state.guesses, state.targets]);
+  }, [dict, locale, mode, playerName, presetGameId, state.guesses, state.targets]);
 
   useEffect(() => {
     if (state.phase !== "final") return;

@@ -6,14 +6,18 @@ import TimeGame from "@/app/time/time-game";
 import { type TimeTarget } from "@/app/time/game-state";
 import { getDb } from "@/db";
 import { timeTeamGames } from "@/db/schema";
+import { getDict } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "Team Time",
-  description: "Eine private Team-Lobby für das Time-Spiel.",
-  robots: { index: false, follow: false, nocache: true },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const dict = await getDict();
+  return {
+    title: dict.meta.teamTimeTitle,
+    description: dict.meta.teamTimeDescription,
+    robots: { index: false, follow: false, nocache: true },
+  };
+}
 
 export default async function TimeTeamGamePage({
   params,

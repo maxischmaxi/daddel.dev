@@ -20,6 +20,7 @@ import { useHoverTone, type ToneSpec } from "@/app/color/use-hover-tone";
 import { AnimatedScore } from "@/components/animated-score";
 import { PrepSequenceDisplay } from "@/components/prep-sequence-display";
 import { Button } from "@/components/ui/button";
+import { useDict } from "@/lib/i18n/use-t";
 import { readStoredClientId } from "@/lib/player";
 import { cn } from "@/lib/utils";
 
@@ -54,6 +55,7 @@ function IdleActions({
   onTeam: () => void;
   onGlobal: () => void;
 }) {
+  const dict = useDict();
   const singleplayerHoverTone = useHoverTone(SINGLEPLAYER_TONE);
   const multiplayerHoverTone = useHoverTone(MULTIPLAYER_TONE);
   const globeHoverEarthquake = useHoverEarthquake();
@@ -68,7 +70,7 @@ function IdleActions({
         size="icon"
         className={cn(CUBE_ACTION_BASE, "group relative size-14 sm:size-16")}
         type="button"
-        aria-label="Einzelspieler"
+        aria-label={dict.common.soloAria}
         onClick={handleSoloClick}
         {...singleplayerHoverTone}
       >
@@ -98,7 +100,7 @@ function IdleActions({
         size="icon"
         className={cn(CUBE_ACTION_BASE, "group relative size-14 sm:size-16")}
         type="button"
-        aria-label="Mehrspieler"
+        aria-label={dict.common.teamAria}
         onClick={handleTeamClick}
         {...multiplayerHoverTone}
       >
@@ -138,7 +140,7 @@ function IdleActions({
         size="icon"
         className={cn(CUBE_ACTION_BASE, "group relative ml-auto size-14 sm:size-16")}
         type="button"
-        aria-label="Weltweit"
+        aria-label={dict.common.globalAria}
         data-globe-rumble
         onClick={handleGlobalClick}
         {...globeHoverEarthquake}
@@ -180,6 +182,7 @@ export default function TimeGame({
   gameId,
   initialTargets,
 }: TimeGameProps = {}) {
+  const dict = useDict();
   const {
     state,
     mode,
@@ -294,25 +297,27 @@ export default function TimeGame({
     startGame("team-participant"),
   );
 
-  const idleTitle = isParticipant ? "Du wurdest eingeladen" : "time";
+  const idleTitle = isParticipant
+    ? dict.game.time.idleInvitedTitle
+    : dict.game.time.idleTitle;
   const idleDescription = isParticipant ? (
     <>
       <br />
-      Halte die Card genauso lange gedrückt wie der Ersteller.
+      {dict.game.time.teamIntro1}
       <br />
-      Am Ende siehst du deinen Platz in der Lobby.
+      {dict.game.time.teamIntro2}
     </>
   ) : (
     <>
       <br />
-      Du siehst und hörst eine zufällige Dauer zwischen 1 und 5 Sekunden.
+      {dict.game.time.soloIntro1}
       <br />
-      Danach hältst du die Card genauso lange gedrückt.
+      {dict.game.time.soloIntro2}
       <br />
       <br />
-      Eine Stoppuhr wäre unfair präzise.
+      {dict.game.time.soloIntro3}
       <br />
-      Dein Zeitgefühl wird trotzdem Punkte finden.
+      {dict.game.time.soloIntro4}
     </>
   );
 
@@ -329,7 +334,7 @@ export default function TimeGame({
       )}
       role={isPick ? "button" : undefined}
       tabIndex={isPick ? 0 : undefined}
-      aria-label={isPick ? "Gedrückt halten, um die Dauer zu schätzen" : undefined}
+      aria-label={isPick ? dict.game.time.holdAria : undefined}
       onPointerDown={isPick ? handlePointerDown : undefined}
       onPointerUp={isPick ? handlePointerUp : undefined}
       onPointerCancel={isPick ? handlePointerCancel : undefined}
@@ -366,7 +371,7 @@ export default function TimeGame({
                 size="icon"
                 className={cn(CUBE_ACTION_BASE, "size-14 sm:size-16")}
                 type="button"
-                aria-label="Spielen"
+                aria-label={dict.common.play}
                 onClick={handleParticipantStart}
               >
                 <ChevronRight
@@ -392,15 +397,15 @@ export default function TimeGame({
           onConfirm={confirmName}
           title={
             mode === "global"
-              ? "Wie heißt du?"
+              ? dict.nameEntry.globalTitle
               : mode === "team-creator"
-                ? "Du erstellst eine Lobby"
-                : "Du trittst der Lobby bei"
+                ? dict.nameEntry.teamCreatorTitle
+                : dict.nameEntry.teamParticipantTitle
           }
           hint={
             mode === "global"
-              ? "Der Name erscheint in der globalen Rangliste."
-              : "Der Name erscheint in der Lobby."
+              ? dict.nameEntry.globalHint
+              : dict.nameEntry.teamHint
           }
         />
       )}
@@ -409,7 +414,7 @@ export default function TimeGame({
 
       {isShow && targetVisible && (
         <span className="pointer-events-none absolute left-4 top-3.5 z-2 select-none text-sm font-medium text-white/70">
-          Merk dir die Länge
+          {dict.game.time.memorizeLabel}
         </span>
       )}
 
@@ -417,12 +422,12 @@ export default function TimeGame({
         <div className="relative z-2 flex flex-1 min-h-0 flex-col items-center justify-center gap-4 px-5 text-center text-white sm:px-8">
           <div className="flex flex-col items-center gap-2">
             <p className="m-0 text-[clamp(2rem,11vw,3.2rem)] font-bold leading-none tracking-tight text-white [text-shadow:0_2px_8px_rgba(0,0,0,0.45)]">
-              {isHolding ? "loslassen" : "halten"}
+              {isHolding ? dict.game.time.releaseLabel : dict.game.time.holdAction}
             </p>
             <p className="max-w-80 text-sm font-medium leading-snug text-white/70 [text-shadow:0_1px_3px_rgba(0,0,0,0.4)] sm:text-base">
               {isHolding
-                ? "Wenn es sich gleich lang anfühlt."
-                : "Drücke die Card so lange, wie Animation und Sound liefen."}
+                ? dict.game.time.releaseHint
+                : dict.game.time.holdHint}
             </p>
           </div>
           <div className="h-2 w-44 overflow-hidden rounded-full bg-white/10 sm:w-56">
@@ -447,13 +452,13 @@ export default function TimeGame({
           </p>
           <div className="flex flex-col items-center gap-0.5 text-sm text-white/90 [text-shadow:0_1px_3px_rgba(0,0,0,0.4)]">
             <span className="tabular-nums">
-              <span className="text-white/60">Ziel</span>{" "}
+              <span className="text-white/60">{dict.game.time.targetLabel}</span>{" "}
               <span className="font-semibold">
                 {formatDuration(revealTarget.durationMs)}
               </span>
             </span>
             <span className="tabular-nums">
-              <span className="text-white/60">Du</span>{" "}
+              <span className="text-white/60">{dict.game.time.youLabel}</span>{" "}
               <span className="font-semibold">
                 {formatDuration(revealGuess.durationMs)}
               </span>
@@ -526,7 +531,7 @@ export default function TimeGame({
             "absolute bottom-3 right-3 z-2 size-12 sm:size-13",
           )}
           type="button"
-          aria-label="Weiter"
+          aria-label={dict.common.next}
           onClick={advance}
         >
           <ChevronRight

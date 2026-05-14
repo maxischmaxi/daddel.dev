@@ -7,7 +7,9 @@ import { AuroraActionButton } from "@/app/color/aurora-action-button";
 import { FinalCard } from "@/app/color/final-card";
 import { useBingClick } from "@/app/color/use-click-tone";
 import { HOME_TONE, SHARE_TONE } from "@/app/color/final-tones";
+import { trackEvent } from "@/lib/analytics-client";
 import type { TimeTeamLobby } from "@/lib/api-client";
+import { useDict, useLocale } from "@/lib/i18n/use-t";
 
 import { type TimeGuess, type TimeTarget } from "./game-state";
 import { PlayerBreakdownRow } from "./player-row";
@@ -30,20 +32,6 @@ type Props = {
   onRetry: () => void;
 };
 
-const COPY: Record<
-  FinalTeamRole,
-  { sending: string; errorPrefix: string }
-> = {
-  creator: {
-    sending: "Lobby wird erstellt …",
-    errorPrefix: "Erstellung fehlgeschlagen",
-  },
-  participant: {
-    sending: "Score wird übertragen …",
-    errorPrefix: "Übertragung fehlgeschlagen",
-  },
-};
-
 function buildShareUrl(id: string): string {
   if (typeof window === "undefined") return `/time/t/${id}`;
   return `${window.location.origin}/time/t/${id}`;
@@ -63,18 +51,29 @@ export function FinalTeam({
   onHome,
   onRetry,
 }: Props) {
+  const dict = useDict();
+  const { locale } = useLocale();
   const [copied, setCopied] = useState(false);
   const handleRetryClick = useBingClick<HTMLButtonElement>(onRetry);
   const shareUrl = shareId ? buildShareUrl(shareId) : null;
-  const copy = COPY[role];
+  const copy =
+    role === "creator"
+      ? { sending: dict.final.team.lobbyCreating, errorPrefix: dict.final.team.createFailed }
+      : { sending: dict.final.team.scoreSending, errorPrefix: dict.final.team.sendFailed };
 
   async function handleCopy() {
     if (!shareUrl) return;
-    const text = buildShareText(totalScore, shareUrl);
+    const text = buildShareText(totalScore, shareUrl, dict);
     try {
       await navigator.clipboard.writeText(text);
       setCopied(true);
       setTimeout(() => setCopied(false), 1600);
+      trackEvent("share_clicked", {
+        game: "time",
+        mode: role === "creator" ? "team-creator" : "team-participant",
+        totalScore,
+        locale,
+      });
     } catch {
       /* ignore */
     }
@@ -93,14 +92,14 @@ export function FinalTeam({
       {state === "error" && (
         <div className="flex flex-col items-center gap-2 px-2 py-3">
           <p className="text-center text-xs text-red-400">
-            {copy.errorPrefix}: {errorMessage ?? "Unbekannter Fehler"}
+            {copy.errorPrefix}: {errorMessage ?? dict.common.unknownError}
           </p>
           <button
             type="button"
             onClick={handleRetryClick}
             className="rounded-md border border-white/30 bg-transparent px-2 py-1 text-xs font-medium text-white hover:bg-white/10"
           >
-            Erneut versuchen
+            {dict.common.retry}
           </button>
         </div>
       )}
@@ -109,12 +108,12 @@ export function FinalTeam({
 
   return (
     <FinalCard
-      label="Lobby"
+      label={dict.final.team.label}
       totalScore={totalScore}
       statusBlock={statusBlock}
       leftAction={
         <AuroraActionButton
-          ariaLabel="Zur Startseite"
+          ariaLabel={dict.common.home}
           tone={HOME_TONE}
           onClick={onHome}
           rings={
@@ -133,7 +132,7 @@ export function FinalTeam({
       }
       rightAction={
         <AuroraActionButton
-          ariaLabel={copied ? "Link kopiert" : "Link teilen"}
+          ariaLabel={copied ? dict.common.copied : dict.common.share}
           tone={SHARE_TONE}
           onClick={handleCopy}
           disabled={!shareUrl}
@@ -188,7 +187,7 @@ export function FinalTeam({
           <ol className="m-0 flex flex-1 min-h-0 list-none flex-col gap-0.5 overflow-auto p-0">
             <PlayerBreakdownRow
               rank={1}
-              name="Du"
+              name={dict.common.you}
               totalScore={totalScore}
               scores={scores}
               guesses={localGuessesMs}

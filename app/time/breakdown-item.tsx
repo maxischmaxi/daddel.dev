@@ -1,3 +1,7 @@
+"use client";
+
+import { useDict } from "@/lib/i18n/use-t";
+
 import { formatDuration, type TimeGuess, type TimeTarget } from "./game-state";
 
 type Props = {
@@ -8,6 +12,7 @@ type Props = {
 };
 
 export default function BreakdownItem({ index, target, guess, points }: Props) {
+  const dict = useDict();
   const errorMs = guess.durationMs - target.durationMs;
   const absErrorMs = Math.abs(errorMs);
 
@@ -28,7 +33,7 @@ export default function BreakdownItem({ index, target, guess, points }: Props) {
         </div>
         <div className="text-[0.7rem] tabular-nums text-white/45 sm:text-xs">
           {errorMs >= 0 ? "+" : "-"}
-          {formatDuration(absErrorMs)} daneben
+          {formatDuration(absErrorMs)} {dict.game.time.offByLabel}
         </div>
       </div>
       <span className="text-right text-sm font-semibold tabular-nums text-white sm:text-base">

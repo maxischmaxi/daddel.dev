@@ -8,17 +8,19 @@ import {
   setAudioMuted,
   subscribeAudioMuted,
 } from "@/lib/audio";
+import { useDict } from "@/lib/i18n/use-t";
 
 const getServerSnapshot = () => false;
 
 export default function AudioToggle() {
+  const dict = useDict();
   const muted = useSyncExternalStore(
     subscribeAudioMuted,
     isAudioMuted,
     getServerSnapshot,
   );
 
-  const label = muted ? "Audio einschalten" : "Audio stummschalten";
+  const label = muted ? dict.common.audioUnmute : dict.common.audioMute;
 
   return (
     <button

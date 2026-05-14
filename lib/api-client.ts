@@ -367,3 +367,121 @@ export async function postTimeTeamScore(
   });
   return asJson<TimeTeamLobby>(res);
 }
+
+// --- Angle game ---
+
+export type AngleRankingEntry = {
+  name: string;
+  totalScore: number;
+  clientId: string;
+  rank: number;
+  scores?: number[];
+  guesses?: number[];
+  targets?: number[];
+};
+
+export type AngleGlobalRanking = {
+  top: AngleRankingEntry[];
+  you: {
+    rank: number;
+    name: string;
+    totalScore: number;
+    scores?: number[];
+    guesses?: number[];
+    targets?: number[];
+  } | null;
+  neighbors: { above?: AngleRankingEntry; below?: AngleRankingEntry };
+  total: number;
+};
+
+export type AngleTeamLobbyEntry = {
+  name: string;
+  totalScore: number;
+  clientId: string;
+  rank: number;
+  scores: number[];
+  guesses: number[];
+};
+
+export type AngleTeamLobby = {
+  id: string;
+  createdAt: number;
+  creatorName: string;
+  targets: number[];
+  scores: AngleTeamLobbyEntry[];
+  yourRank: number | null;
+  your: {
+    totalScore: number;
+    scores: number[];
+    guesses: number[];
+  } | null;
+};
+
+export async function postAngleGlobalScore(input: {
+  name: string;
+  clientId: string;
+  total: number;
+  targets: number[];
+  scores: number[];
+  guesses: number[];
+}): Promise<AngleGlobalRanking> {
+  const res = await fetch("/api/angle/global", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  return asJson<AngleGlobalRanking>(res);
+}
+
+export async function fetchAngleGlobalRanking(
+  clientId?: string,
+): Promise<AngleGlobalRanking> {
+  const url = clientId
+    ? `/api/angle/global?clientId=${encodeURIComponent(clientId)}`
+    : "/api/angle/global";
+  const res = await fetch(url);
+  return asJson<AngleGlobalRanking>(res);
+}
+
+export async function createAngleTeamGame(input: {
+  name: string;
+  clientId: string;
+  targets: number[];
+  creatorScore: { total: number; scores: number[]; guesses: number[] };
+}): Promise<{ id: string }> {
+  const res = await fetch("/api/angle/team", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  return asJson<{ id: string }>(res);
+}
+
+export async function fetchAngleTeamLobby(
+  id: string,
+  clientId?: string,
+): Promise<AngleTeamLobby> {
+  const url = clientId
+    ? `/api/angle/team/${encodeURIComponent(id)}?clientId=${encodeURIComponent(clientId)}`
+    : `/api/angle/team/${encodeURIComponent(id)}`;
+  const res = await fetch(url);
+  return asJson<AngleTeamLobby>(res);
+}
+
+export async function postAngleTeamScore(
+  id: string,
+  input: {
+    name: string;
+    clientId: string;
+    total: number;
+    scores: number[];
+    guesses: number[];
+  },
+): Promise<AngleTeamLobby> {
+  const res = await fetch(`/api/angle/team/${encodeURIComponent(id)}`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  return asJson<AngleTeamLobby>(res);
+}

@@ -6,6 +6,7 @@ import { type CSSProperties, useEffect, useState } from "react";
 import { AnimatedScore } from "@/components/animated-score";
 import { PrepSequenceDisplay } from "@/components/prep-sequence-display";
 import { Button } from "@/components/ui/button";
+import { useDict } from "@/lib/i18n/use-t";
 import { readStoredClientId } from "@/lib/player";
 import { cn } from "@/lib/utils";
 
@@ -44,6 +45,7 @@ function IdleActions({
   onTeam: () => void;
   onGlobal: () => void;
 }) {
+  const dict = useDict();
   const singleplayerHoverTone = useHoverTone(SINGLEPLAYER_TONE);
   const multiplayerHoverTone = useHoverTone(MULTIPLAYER_TONE);
   const globeHoverEarthquake = useHoverEarthquake();
@@ -58,7 +60,7 @@ function IdleActions({
         size="icon"
         className={cn(CUBE_ACTION_BASE, "group relative size-14 sm:size-16")}
         type="button"
-        aria-label="Einzelspieler"
+        aria-label={dict.common.soloAria}
         onClick={handleSoloClick}
         {...singleplayerHoverTone}
       >
@@ -88,7 +90,7 @@ function IdleActions({
         size="icon"
         className={cn(CUBE_ACTION_BASE, "group relative size-14 sm:size-16")}
         type="button"
-        aria-label="Mehrspieler"
+        aria-label={dict.common.teamAria}
         onClick={handleTeamClick}
         {...multiplayerHoverTone}
       >
@@ -128,7 +130,7 @@ function IdleActions({
         size="icon"
         className={cn(CUBE_ACTION_BASE, "group relative ml-auto size-14 sm:size-16")}
         type="button"
-        aria-label="Weltweit"
+        aria-label={dict.common.globalAria}
         data-globe-rumble
         onClick={handleGlobalClick}
         {...globeHoverEarthquake}
@@ -170,6 +172,7 @@ export default function ColorGame({
   gameId,
   initialTargets,
 }: ColorGameProps = {}) {
+  const dict = useDict();
   const {
     state,
     mode,
@@ -237,25 +240,27 @@ export default function ColorGame({
     startGame("team-participant"),
   );
 
-  const idleTitle = isParticipant ? "Du wurdest eingeladen" : "color";
+  const idleTitle = isParticipant
+    ? dict.game.color.idleInvitedTitle
+    : dict.game.color.idleTitle;
   const idleDescription = isParticipant ? (
     <>
       <br />
-      Errate dieselben fünf Farben wie der Ersteller.
+      {dict.game.color.teamIntro1}
       <br />
-      Am Ende siehst du deinen Platz in der Lobby.
+      {dict.game.color.teamIntro2}
     </>
   ) : (
     <>
       <br />
-      Du siehst 5 Sekunden lang eine Farbe.
+      {dict.game.color.soloIntro1}
       <br />
-      Danach baust du sie mit drei Reglern nach.
+      {dict.game.color.soloIntro2}
       <br />
       <br />
-      Eine GPU rekonstruiert das fehlerfrei in Mikrosekunden.
+      {dict.game.color.soloIntro3}
       <br />
-      Du wirst grandios daneben liegen — genau dafür gibt es Punkte.
+      {dict.game.color.soloIntro4}
     </>
   );
 
@@ -278,7 +283,7 @@ export default function ColorGame({
         <div className="absolute inset-y-0 left-0 z-2 flex overflow-hidden rounded-l-xl">
           <VSlider
             id="slider-h"
-            ariaLabel="Hue"
+            ariaLabel={dict.game.color.hueAria}
             min={0}
             max={360}
             value={hsl.h}
@@ -289,7 +294,7 @@ export default function ColorGame({
           />
           <VSlider
             id="slider-s"
-            ariaLabel="Saturation"
+            ariaLabel={dict.game.color.satAria}
             min={0}
             max={100}
             value={hsl.s}
@@ -300,7 +305,7 @@ export default function ColorGame({
           />
           <VSlider
             id="slider-l"
-            ariaLabel="Lightness"
+            ariaLabel={dict.game.color.lightAria}
             min={0}
             max={100}
             value={hsl.l}
@@ -329,7 +334,7 @@ export default function ColorGame({
                 size="icon"
                 className={cn(CUBE_ACTION_BASE, "size-14 sm:size-16")}
                 type="button"
-                aria-label="Spielen"
+                aria-label={dict.common.play}
                 onClick={handleParticipantStart}
               >
                 <ChevronRight
@@ -355,15 +360,15 @@ export default function ColorGame({
           onConfirm={confirmName}
           title={
             mode === "global"
-              ? "Wie heißt du?"
+              ? dict.nameEntry.globalTitle
               : mode === "team-creator"
-                ? "Du erstellst eine Lobby"
-                : "Du trittst der Lobby bei"
+                ? dict.nameEntry.teamCreatorTitle
+                : dict.nameEntry.teamParticipantTitle
           }
           hint={
             mode === "global"
-              ? "Der Name erscheint in der globalen Rangliste."
-              : "Der Name erscheint in der Lobby."
+              ? dict.nameEntry.globalHint
+              : dict.nameEntry.teamHint
           }
         />
       )}
@@ -453,7 +458,7 @@ export default function ColorGame({
             "absolute bottom-3 right-3 z-2 size-12 sm:size-13",
           )}
           type="button"
-          aria-label="Bestätigen"
+          aria-label={dict.common.confirm}
           onClick={submitGuess}
         >
           <Check
@@ -474,7 +479,7 @@ export default function ColorGame({
               "absolute bottom-3 right-3 z-2 size-12 sm:size-13",
             )}
             type="button"
-            aria-label="Weiter"
+            aria-label={dict.common.next}
             onClick={advance}
           >
             <ChevronRight
@@ -484,7 +489,7 @@ export default function ColorGame({
             />
           </Button>
           <span className="pointer-events-none absolute left-3 top-3 z-2 inline-flex items-center rounded-full border border-border bg-white/92 px-2.5 py-0.5 text-xs font-semibold leading-4 text-cube-dark backdrop-blur-xs">
-            Du
+            {dict.common.you}
           </span>
         </>
       )}

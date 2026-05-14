@@ -5,7 +5,9 @@ import { useState } from "react";
 
 import { useBingClick } from "@/app/color/use-click-tone";
 import { Button } from "@/components/ui/button";
+import { trackEvent } from "@/lib/analytics-client";
 import type { SoundTeamLobby } from "@/lib/api-client";
+import { useDict, useLocale } from "@/lib/i18n/use-t";
 import { cn } from "@/lib/utils";
 
 import { type Sound } from "./game-state";
@@ -47,6 +49,8 @@ export function FinalTeamCreator({
   onHome,
   onRetry,
 }: Props) {
+  const dict = useDict();
+  const { locale } = useLocale();
   const [copied, setCopied] = useState(false);
   const handleHomeClick = useBingClick<HTMLButtonElement>(onHome);
   const handleRetryClick = useBingClick<HTMLButtonElement>(onRetry);
@@ -55,11 +59,17 @@ export function FinalTeamCreator({
 
   async function handleCopy() {
     if (!shareUrl) return;
-    const text = buildShareText(totalScore, shareUrl);
+    const text = buildShareText(totalScore, shareUrl, dict);
     try {
       await navigator.clipboard.writeText(text);
       setCopied(true);
       setTimeout(() => setCopied(false), 1600);
+      trackEvent("share_clicked", {
+        game: "sound",
+        mode: "team-creator",
+        totalScore,
+        locale,
+      });
     } catch {
       /* ignore */
     }
@@ -75,7 +85,7 @@ export function FinalTeamCreator({
     <div className="flex flex-1 min-h-0 flex-col gap-2 px-4 sm:gap-3 sm:px-5">
       <div className="flex flex-col items-center gap-0.5">
         <h2 className="m-0 text-xs font-semibold uppercase tracking-[0.18em] text-white/60">
-          Lobby
+          {dict.final.team.label}
         </h2>
         <div className="flex items-baseline gap-1.5">
           <span className="text-4xl font-bold leading-none tracking-tight tabular-nums text-white sm:text-[3rem]">
@@ -89,21 +99,21 @@ export function FinalTeamCreator({
 
       {state === "sending" && (
         <p className="px-2 py-2 text-center text-xs text-white/60">
-          Lobby wird erstellt …
+          {dict.final.team.lobbyCreating}
         </p>
       )}
 
       {state === "error" && (
         <div className="flex flex-col items-center gap-2 px-2 py-3">
           <p className="text-center text-xs text-red-400">
-            Erstellung fehlgeschlagen: {errorMessage ?? "Unbekannter Fehler"}
+            {dict.final.team.createFailed}: {errorMessage ?? dict.common.unknownError}
           </p>
           <button
             type="button"
             onClick={handleRetryClick}
             className="rounded-md border border-white/30 bg-transparent px-2 py-1 text-xs font-medium text-white hover:bg-white/10"
           >
-            Erneut versuchen
+            {dict.common.retry}
           </button>
         </div>
       )}
@@ -129,7 +139,7 @@ export function FinalTeamCreator({
           <ol className="m-0 flex flex-1 min-h-0 list-none flex-col gap-0.5 overflow-auto p-0">
             <PlayerBreakdownRow
               rank={1}
-              name="Du"
+              name={dict.common.you}
               totalScore={totalScore}
               scores={scores}
               guesses={localGuessesHz}
@@ -146,7 +156,7 @@ export function FinalTeamCreator({
           size="icon"
           className={cn(CUBE_ACTION_BASE, "size-14 sm:size-16")}
           type="button"
-          aria-label="Zur Startseite"
+          aria-label={dict.common.home}
           onClick={handleHomeClick}
         >
           <Home
@@ -163,7 +173,7 @@ export function FinalTeamCreator({
             "size-14 disabled:opacity-40 disabled:cursor-not-allowed sm:size-16",
           )}
           type="button"
-          aria-label={copied ? "Link kopiert" : "Link teilen"}
+          aria-label={copied ? dict.common.copied : dict.common.share}
           onClick={handleCopyClick}
           disabled={!shareUrl}
         >
