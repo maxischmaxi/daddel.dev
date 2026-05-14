@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 
+import TimeGame from "./time-game";
+
 const description =
-  "Das Time-Spiel ist in Arbeit – bald kannst du dein Zeitgefühl auf die Probe stellen.";
+  "Schätze eine gehörte und gesehene Zeitspanne – halte die Card danach genauso lange gedrückt. Zeitgefühl direkt im Browser, ohne Login.";
 
 export const metadata: Metadata = {
   title: "Time",
@@ -20,11 +22,26 @@ export const metadata: Metadata = {
   },
 };
 
+const gameJsonLd = JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "VideoGame",
+  name: "Time",
+  url: "https://daddel.dev/time",
+  description,
+  applicationCategory: "Game",
+  genre: ["Timing", "Perception", "Casual"],
+  gamePlatform: "Web Browser",
+  inLanguage: "de",
+  operatingSystem: "Any",
+  playMode: ["SinglePlayer"],
+  offers: { "@type": "Offer", price: "0", priceCurrency: "EUR" },
+});
+
 export default function TimePage() {
   return (
     <>
-      <h1>Time</h1>
-      <p>Hier kommt das Time-Spiel hin.</p>
+      <TimeGame />
+      <script type="application/ld+json">{gameJsonLd}</script>
     </>
   );
 }

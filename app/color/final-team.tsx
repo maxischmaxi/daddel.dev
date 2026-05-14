@@ -7,6 +7,7 @@ import type { TeamLobby } from "@/lib/api-client";
 
 import { AuroraActionButton } from "./aurora-action-button";
 import { FinalCard } from "./final-card";
+import { useBingClick } from "./use-click-tone";
 import { HOME_TONE, SHARE_TONE } from "./final-tones";
 import { type Color } from "./game-state";
 import { PlayerBreakdownRow } from "./player-row";
@@ -59,6 +60,7 @@ export function FinalTeam({
   onRetry,
 }: Props) {
   const [copied, setCopied] = useState(false);
+  const handleRetryClick = useBingClick<HTMLButtonElement>(onRetry);
   const shareUrl = shareId ? buildShareUrl(shareId) : null;
   const copy = COPY[role];
 
@@ -90,7 +92,7 @@ export function FinalTeam({
           </p>
           <button
             type="button"
-            onClick={onRetry}
+            onClick={handleRetryClick}
             className="rounded-md border border-white/30 bg-transparent px-2 py-1 text-xs font-medium text-white hover:bg-white/10"
           >
             Erneut versuchen

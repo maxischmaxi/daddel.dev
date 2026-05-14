@@ -3,6 +3,7 @@
 import { Check, Home, Share2 } from "lucide-react";
 import { useState } from "react";
 
+import { useBingClick } from "@/app/color/use-click-tone";
 import { Button } from "@/components/ui/button";
 import type { SoundTeamLobby } from "@/lib/api-client";
 import { cn } from "@/lib/utils";
@@ -12,7 +13,7 @@ import { PlayerBreakdownRow } from "./player-row";
 import { buildShareText } from "./share-quips";
 
 const CUBE_ACTION_BASE =
-  "rounded-full bg-white text-cube-dark border border-[hsl(220_13%_78%)] shadow-[0_1px_2px_rgba(0,0,0,0.06)] hover:bg-[hsl(210_40%_96.1%)] hover:text-cube-dark active:scale-96 focus-visible:outline-none focus-visible:shadow-[0_0_0_2px_var(--background),0_0_0_4px_var(--ring)] transition-all duration-150";
+  "touch-manipulation rounded-full bg-white text-cube-dark border border-[hsl(220_13%_78%)] shadow-[0_1px_2px_rgba(0,0,0,0.06)] hover:bg-[hsl(210_40%_96.1%)] hover:text-cube-dark active:scale-96 focus-visible:outline-none focus-visible:shadow-[0_0_0_2px_var(--background),0_0_0_4px_var(--ring)] transition-all duration-150";
 
 type Props = {
   totalScore: number;
@@ -47,6 +48,8 @@ export function FinalTeamCreator({
   onRetry,
 }: Props) {
   const [copied, setCopied] = useState(false);
+  const handleHomeClick = useBingClick<HTMLButtonElement>(onHome);
+  const handleRetryClick = useBingClick<HTMLButtonElement>(onRetry);
 
   const shareUrl = shareId ? buildShareUrl(shareId) : null;
 
@@ -62,18 +65,20 @@ export function FinalTeamCreator({
     }
   }
 
+  const handleCopyClick = useBingClick<HTMLButtonElement>(handleCopy);
+
   const lobbyTargets = lobby?.targets ?? targets.map((t) => t.freq);
   const localTargetsHz = targets.map((t) => t.freq);
   const localGuessesHz = guesses.map((g) => g.freq);
 
   return (
-    <div className="flex flex-1 min-h-0 flex-col gap-3 px-5">
+    <div className="flex flex-1 min-h-0 flex-col gap-2 px-4 sm:gap-3 sm:px-5">
       <div className="flex flex-col items-center gap-0.5">
         <h2 className="m-0 text-xs font-semibold uppercase tracking-[0.18em] text-white/60">
           Lobby
         </h2>
         <div className="flex items-baseline gap-1.5">
-          <span className="text-[3rem] font-bold leading-none tracking-tight tabular-nums text-white">
+          <span className="text-4xl font-bold leading-none tracking-tight tabular-nums text-white sm:text-[3rem]">
             {totalScore.toFixed(3)}
           </span>
           <span className="text-base font-medium tabular-nums text-white/60">
@@ -95,7 +100,7 @@ export function FinalTeamCreator({
           </p>
           <button
             type="button"
-            onClick={onRetry}
+            onClick={handleRetryClick}
             className="rounded-md border border-white/30 bg-transparent px-2 py-1 text-xs font-medium text-white hover:bg-white/10"
           >
             Erneut versuchen
@@ -139,10 +144,10 @@ export function FinalTeamCreator({
         <Button
           variant="ghost"
           size="icon"
-          className={cn(CUBE_ACTION_BASE, "size-16")}
+          className={cn(CUBE_ACTION_BASE, "size-14 sm:size-16")}
           type="button"
           aria-label="Zur Startseite"
-          onClick={onHome}
+          onClick={handleHomeClick}
         >
           <Home
             aria-hidden="true"
@@ -155,11 +160,11 @@ export function FinalTeamCreator({
           size="icon"
           className={cn(
             CUBE_ACTION_BASE,
-            "size-16 disabled:opacity-40 disabled:cursor-not-allowed",
+            "size-14 disabled:opacity-40 disabled:cursor-not-allowed sm:size-16",
           )}
           type="button"
           aria-label={copied ? "Link kopiert" : "Link teilen"}
-          onClick={handleCopy}
+          onClick={handleCopyClick}
           disabled={!shareUrl}
         >
           {copied ? (

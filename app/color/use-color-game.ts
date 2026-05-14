@@ -160,23 +160,19 @@ export function useColorGame(options: ColorGameOptions = {}) {
       }, SHOW_MS);
     };
 
-    if (state.round === 0) {
-      let i = 0;
-      const step = () => {
-        if (i >= PREP_SEQUENCE.length) {
-          revealTarget();
-          return;
-        }
-        const entry = PREP_SEQUENCE[i];
-        setPrepStep(i);
-        setPrepText(entry.text);
-        i++;
-        timeoutRef.current = setTimeout(step, entry.duration);
-      };
-      step();
-    } else {
-      revealTarget();
-    }
+    let i = 0;
+    const step = () => {
+      if (i >= PREP_SEQUENCE.length) {
+        revealTarget();
+        return;
+      }
+      const entry = PREP_SEQUENCE[i];
+      setPrepStep(i);
+      setPrepText(entry.text);
+      i++;
+      timeoutRef.current = setTimeout(step, entry.duration);
+    };
+    step();
 
     return clearTimers;
   }, [state.phase, state.round, clearTimers]);

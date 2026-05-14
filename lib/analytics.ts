@@ -3,7 +3,7 @@ export type AnalyticsEvent =
   | "game_finished"
   | "score_submission_failed";
 
-export type AnalyticsGame = "color" | "sound";
+export type AnalyticsGame = "color" | "sound" | "time";
 
 export type AnalyticsMode =
   | "solo"

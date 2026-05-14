@@ -1,3 +1,8 @@
+type WebAudioWindow = Window &
+  typeof globalThis & {
+    webkitAudioContext?: typeof AudioContext;
+  };
+
 let ctx: AudioContext | null = null;
 let masterGain: GainNode | null = null;
 
@@ -44,9 +49,24 @@ export function subscribeAudioMuted(listener: () => void): () => void {
   };
 }
 
+function createAudioContext(): AudioContext {
+  if (typeof window === "undefined") {
+    throw new Error("AudioContext is only available in the browser");
+  }
+
+  const AudioContextCtor =
+    window.AudioContext ?? (window as WebAudioWindow).webkitAudioContext;
+  if (!AudioContextCtor) {
+    throw new Error("Web Audio API is not supported in this browser");
+  }
+
+  return new AudioContextCtor();
+}
+
 export function getAudioContext(): AudioContext {
-  if (ctx === null) {
-    ctx = new AudioContext();
+  if (ctx === null || ctx.state === "closed") {
+    ctx = createAudioContext();
+    masterGain = null;
   }
   if (ctx.state === "suspended") {
     void ctx.resume();
@@ -54,21 +74,76 @@ export function getAudioContext(): AudioContext {
   return ctx;
 }
 
+function playSilentUnlockSound(c: AudioContext): void {
+  try {
+    const buffer = c.createBuffer(1, 1, c.sampleRate);
+    const source = c.createBufferSource();
+    source.buffer = buffer;
+    source.connect(c.destination);
+    source.start(0);
+    window.setTimeout(() => {
+      try {
+        source.disconnect();
+      } catch {
+        /* ignore */
+      }
+    }, 0);
+  } catch {
+    /* ignore — the resume attempt above is still useful */
+  }
+}
+
+export function unlockAudio(): void {
+  if (typeof window === "undefined") return;
+  try {
+    const c = getAudioContext();
+    getMasterGain();
+    if (c.state === "suspended") {
+      void c.resume();
+    }
+    playSilentUnlockSound(c);
+  } catch {
+    /* no Web Audio support */
+  }
+}
+
 let armed = false;
+
+const AUDIO_UNLOCK_EVENTS = [
+  "pointerdown",
+  "pointerup",
+  "mousedown",
+  "touchend",
+  "click",
+  "keydown",
+] as const;
 
 export function armAudioOnFirstGesture(): void {
   if (armed || typeof window === "undefined") return;
   armed = true;
-  const arm = () => {
-    getAudioContext();
-    getMasterGain();
-    window.removeEventListener("pointerdown", arm);
-    window.removeEventListener("keydown", arm);
-    window.removeEventListener("touchstart", arm);
+
+  let arm: () => void;
+  const disarm = () => {
+    for (const eventName of AUDIO_UNLOCK_EVENTS) {
+      window.removeEventListener(eventName, arm);
+    }
   };
-  window.addEventListener("pointerdown", arm);
-  window.addEventListener("keydown", arm);
-  window.addEventListener("touchstart", arm);
+
+  arm = () => {
+    unlockAudio();
+    const c = ctx;
+    if (c?.state === "running") {
+      disarm();
+      return;
+    }
+    void c?.resume().finally(() => {
+      if (c.state === "running") disarm();
+    });
+  };
+
+  for (const eventName of AUDIO_UNLOCK_EVENTS) {
+    window.addEventListener(eventName, arm);
+  }
 }
 
 export function getMasterGain(): GainNode {
@@ -191,6 +266,124 @@ export function scheduleTickRoll(
           // ignore
         }
       }, 100);
+    },
+  };
+}
+
+export function scheduleScoreCountPips(
+  targetScore: number,
+  options: {
+    durationSec?: number;
+    maxScore?: number;
+    delaySec?: number;
+    minPips?: number;
+    maxPips?: number;
+    startFreqHz?: number;
+    endFreqHz?: number;
+    pipLengthSec?: number;
+    peakGain?: number;
+    oscillatorType?: OscillatorType;
+  } = {},
+): ScheduledTick | null {
+  const score = Math.max(0, Number.isFinite(targetScore) ? targetScore : 0);
+  if (score <= 0.0001) return null;
+
+  const ctx = getAudioContext();
+  if (ctx.state !== "running") return null;
+
+  const master = getMasterGain();
+  const duration = Math.max(0.12, options.durationSec ?? 0.95);
+  const delay = Math.max(0, options.delaySec ?? 0.01);
+  const maxScore = Math.max(0.0001, options.maxScore ?? 10);
+  const normalizedScore = Math.max(0, Math.min(1, score / maxScore));
+  const minPips = Math.max(1, options.minPips ?? 3);
+  const maxPips = Math.max(minPips, options.maxPips ?? 14);
+  const pipCount = Math.max(
+    1,
+    Math.round(minPips + (maxPips - minPips) * Math.sqrt(normalizedScore)),
+  );
+  const pipLength = Math.max(0.025, options.pipLengthSec ?? 0.044);
+  const peakGain = Math.max(0.0001, options.peakGain ?? 0.032);
+  const startFreq = Math.max(20, options.startFreqHz ?? 420);
+  const endFreq = Math.max(
+    startFreq + 1,
+    options.endFreqHz ?? 650 + 520 * normalizedScore,
+  );
+  const startAt = ctx.currentTime + delay;
+  const lastPipAt = Math.max(0.01, duration - pipLength * 0.7);
+  const nodes: Array<{ osc: OscillatorNode; gain: GainNode }> = [];
+
+  for (let i = 0; i < pipCount; i++) {
+    const progress = pipCount === 1 ? 1 : i / (pipCount - 1);
+    const acceleratedTime = 1 - Math.pow(1 - progress, 1.65);
+    const at = startAt + lastPipAt * acceleratedTime;
+    const freq = startFreq * Math.pow(endFreq / startFreq, progress);
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    osc.type = options.oscillatorType ?? "sine";
+    osc.frequency.setValueAtTime(freq, at);
+    osc.frequency.exponentialRampToValueAtTime(freq * 1.035, at + pipLength);
+
+    gain.gain.setValueAtTime(0.0001, at);
+    gain.gain.exponentialRampToValueAtTime(peakGain, at + 0.006);
+    gain.gain.exponentialRampToValueAtTime(0.0001, at + pipLength);
+
+    osc.connect(gain).connect(master);
+    osc.start(at);
+    osc.stop(at + pipLength + 0.025);
+    nodes.push({ osc, gain });
+  }
+
+  let stopped = false;
+  let cleanupTimer: number | null = window.setTimeout(
+    () => {
+      cleanupTimer = null;
+      for (const { osc, gain } of nodes) {
+        try {
+          osc.disconnect();
+          gain.disconnect();
+        } catch {
+          // ignore
+        }
+      }
+    },
+    (delay + duration + 0.15) * 1000,
+  );
+
+  return {
+    stop: () => {
+      if (stopped) return;
+      stopped = true;
+      if (cleanupTimer !== null) {
+        window.clearTimeout(cleanupTimer);
+        cleanupTimer = null;
+      }
+      const now = ctx.currentTime;
+      for (const { osc, gain } of nodes) {
+        try {
+          gain.gain.cancelScheduledValues(now);
+          gain.gain.setValueAtTime(gain.gain.value, now);
+          gain.gain.linearRampToValueAtTime(0, now + 0.025);
+        } catch {
+          // ignore
+        }
+        try {
+          osc.stop(now + 0.04);
+        } catch {
+          // already stopped
+        }
+      }
+      window.setTimeout(() => {
+        for (const { osc, gain } of nodes) {
+          try {
+            osc.disconnect();
+            gain.disconnect();
+          } catch {
+            // ignore
+          }
+        }
+      }, 90);
     },
   };
 }

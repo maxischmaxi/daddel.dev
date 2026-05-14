@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 import { AURORA_GRADIENT, CUBE_ACTION_BASE } from "./shared-styles";
+import { useBingClick } from "./use-click-tone";
 import { useHoverTone, type ToneSpec } from "./use-hover-tone";
 
 type Props = {
@@ -26,17 +27,18 @@ export function AuroraActionButton({
   children,
 }: Props) {
   const hover = useHoverTone(tone);
+  const handleClick = useBingClick<HTMLButtonElement>(onClick);
   return (
     <Button
       variant="ghost"
       size="icon"
       type="button"
       aria-label={ariaLabel}
-      onClick={onClick}
+      onClick={handleClick}
       disabled={disabled}
       className={cn(
         CUBE_ACTION_BASE,
-        "group relative size-16",
+        "group relative size-14 sm:size-16",
         disabled && "disabled:opacity-40 disabled:cursor-not-allowed",
       )}
       {...hover}

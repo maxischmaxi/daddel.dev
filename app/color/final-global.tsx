@@ -6,6 +6,7 @@ import type { GlobalRanking, RankingEntry } from "@/lib/api-client";
 
 import { AuroraActionButton } from "./aurora-action-button";
 import { FinalCard } from "./final-card";
+import { useBingClick } from "./use-click-tone";
 import { HOME_TONE, REPLAY_TONE } from "./final-tones";
 import { PlayerBreakdownRow } from "./player-row";
 
@@ -30,6 +31,7 @@ export function FinalGlobal({
   onReplay,
   onRetry,
 }: Props) {
+  const handleRetryClick = useBingClick<HTMLButtonElement>(onRetry);
   const youInTop = ranking?.you
     ? ranking.top.some((r) => r.clientId === yourClientId)
     : false;
@@ -54,7 +56,7 @@ export function FinalGlobal({
           </p>
           <button
             type="button"
-            onClick={onRetry}
+            onClick={handleRetryClick}
             className="rounded-md border border-white/30 bg-transparent px-2 py-1 text-xs font-medium text-white hover:bg-white/10"
           >
             Erneut versuchen

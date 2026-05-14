@@ -27,23 +27,23 @@ export function PlayerBreakdownRow({
   return (
     <li
       className={cn(
-        "flex items-center gap-2 rounded-md px-2 py-1.5 text-white/70",
+        "flex items-center gap-1.5 rounded-md px-1.5 py-1 text-white/70 sm:gap-2 sm:px-2 sm:py-1.5",
         highlight && "bg-white/10 text-white",
       )}
     >
-      <span className="w-5 shrink-0 text-right text-sm tabular-nums text-white/50">
+      <span className="w-4 shrink-0 text-right text-xs tabular-nums text-white/50 sm:w-5 sm:text-sm">
         {rank}.
       </span>
       <span
         className={cn(
-          "min-w-0 flex-1 truncate text-sm",
+          "min-w-0 flex-1 truncate text-xs sm:text-sm",
           highlight && "font-semibold",
         )}
       >
         {name}
       </span>
       {hasBreakdown && (
-        <div className="flex shrink-0 items-end gap-1">
+        <div className="flex shrink-0 items-end gap-0.5 sm:gap-1">
           {targets!.map((target, i) => {
             const guess = guesses![i];
             const pts = scores![i];
@@ -54,12 +54,12 @@ export function PlayerBreakdownRow({
                 className="flex flex-col items-center gap-0.5"
                 aria-label={`Runde ${i + 1}: ${pts.toFixed(3)} Punkte`}
               >
-                <span className="text-[0.55rem] font-semibold leading-none tabular-nums">
+                <span className="text-[0.5rem] font-semibold leading-none tabular-nums sm:text-[0.55rem]">
                   {pts.toFixed(2)}
                 </span>
                 <span
                   aria-hidden="true"
-                  className="size-7 rounded-full"
+                  className="size-5 rounded-full sm:size-7"
                   style={{
                     background: `linear-gradient(135deg, ${hslCss(guess.h, guess.s, guess.l)} 50%, ${hslCss(target.h, target.s, target.l)} 50%)`,
                   }}
@@ -71,7 +71,7 @@ export function PlayerBreakdownRow({
       )}
       <span
         className={cn(
-          "w-12 shrink-0 text-right text-sm tabular-nums",
+          "w-10 shrink-0 text-right text-xs tabular-nums sm:w-12 sm:text-sm",
           highlight && "font-semibold",
         )}
       >

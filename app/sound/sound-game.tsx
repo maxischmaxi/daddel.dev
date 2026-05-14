@@ -4,9 +4,12 @@ import { Check, ChevronRight, Globe, User, Users } from "lucide-react";
 
 import { CountdownDisplay } from "@/app/color/countdown-display";
 import { NameEntry } from "@/app/color/name-entry";
+import { PrepSequenceDisplay } from "@/components/prep-sequence-display";
+import { useBingClick } from "@/app/color/use-click-tone";
 import { useHoverEarthquake } from "@/app/color/use-hover-earthquake";
 import { useHoverTone, type ToneSpec } from "@/app/color/use-hover-tone";
 import VSlider from "@/app/color/vslider";
+import { AnimatedScore } from "@/components/animated-score";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -30,7 +33,7 @@ const MULTIPLAYER_TONE: readonly ToneSpec[] = [
 ];
 
 const CUBE_ACTION_BASE =
-  "rounded-full bg-white text-cube-dark border border-[hsl(220_13%_78%)] shadow-[0_1px_2px_rgba(0,0,0,0.06)] hover:bg-[hsl(210_40%_96.1%)] hover:text-cube-dark active:scale-[0.96] focus-visible:outline-none focus-visible:shadow-[0_0_0_2px_var(--background),0_0_0_4px_var(--ring)] transition-all duration-150";
+  "touch-manipulation rounded-full bg-white text-cube-dark border border-[hsl(220_13%_78%)] shadow-[0_1px_2px_rgba(0,0,0,0.06)] hover:bg-[hsl(210_40%_96.1%)] hover:text-cube-dark active:scale-96 focus-visible:outline-none focus-visible:shadow-[0_0_0_2px_var(--background),0_0_0_4px_var(--ring)] transition-all duration-150";
 
 const AURORA_GRADIENT =
   "conic-gradient(from var(--aurora-angle), hsl(0,100%,60%), hsl(60,100%,60%), hsl(120,100%,50%), hsl(180,100%,50%), hsl(240,100%,65%), hsl(300,100%,60%), hsl(360,100%,60%))";
@@ -47,16 +50,19 @@ function IdleActions({
   const singleplayerHoverTone = useHoverTone(SINGLEPLAYER_TONE);
   const multiplayerHoverTone = useHoverTone(MULTIPLAYER_TONE);
   const globeHoverEarthquake = useHoverEarthquake();
+  const handleSoloClick = useBingClick<HTMLButtonElement>(onSolo);
+  const handleTeamClick = useBingClick<HTMLButtonElement>(onTeam);
+  const handleGlobalClick = useBingClick<HTMLButtonElement>(onGlobal);
 
   return (
-    <div className="flex gap-2 px-6">
+    <div className="flex gap-2 px-4 sm:px-6">
       <Button
         variant="ghost"
         size="icon"
-        className={cn(CUBE_ACTION_BASE, "group relative size-16")}
+        className={cn(CUBE_ACTION_BASE, "group relative size-14 sm:size-16")}
         type="button"
         aria-label="Einzelspieler"
-        onClick={onSolo}
+        onClick={handleSoloClick}
         {...singleplayerHoverTone}
       >
         <span
@@ -83,10 +89,10 @@ function IdleActions({
       <Button
         variant="ghost"
         size="icon"
-        className={cn(CUBE_ACTION_BASE, "group relative size-16")}
+        className={cn(CUBE_ACTION_BASE, "group relative size-14 sm:size-16")}
         type="button"
         aria-label="Mehrspieler"
-        onClick={onTeam}
+        onClick={handleTeamClick}
         {...multiplayerHoverTone}
       >
         <span
@@ -118,11 +124,11 @@ function IdleActions({
       <Button
         variant="ghost"
         size="icon"
-        className={cn(CUBE_ACTION_BASE, "group relative ml-auto size-16")}
+        className={cn(CUBE_ACTION_BASE, "group relative ml-auto size-14 sm:size-16")}
         type="button"
         aria-label="Weltweit"
         data-globe-rumble
-        onClick={onGlobal}
+        onClick={handleGlobalClick}
         {...globeHoverEarthquake}
       >
         <span
@@ -215,6 +221,10 @@ export default function SoundGame({
     resetToIdle();
   };
 
+  const handleParticipantStart = useBingClick<HTMLButtonElement>(() =>
+    startGame("team-participant"),
+  );
+
   const idleTitle = isParticipant ? "Du wurdest eingeladen" : "sound";
   const idleDescription = isParticipant ? (
     <>
@@ -247,13 +257,13 @@ export default function SoundGame({
   return (
     <div
       className={cn(
-        "shadow-xl relative overflow-hidden rounded-xl bg-black flex flex-col flex-nowrap aspect-[1/1.7] w-full max-w-120 motion-safe:has-[[data-globe-rumble]:hover]:animate-earthquake",
-        !isShow && !isPick && "py-6",
+        "game-shell-sound shadow-xl relative overflow-hidden rounded-xl bg-black flex flex-col flex-nowrap aspect-[1/1.7] motion-safe:has-[[data-globe-rumble]:hover]:animate-earthquake",
+        !isShow && !isPick && "py-4 sm:py-6",
       )}
     >
       {(isShow || isPick) && (
         <div className="pointer-events-none absolute top-0 bottom-0 left-0 right-0 z-1 flex">
-          <div className="pointer-events-auto flex w-12 items-stretch">
+          <div className="pointer-events-auto flex w-14 items-stretch sm:w-12">
             {isPick && (
               <VSlider
                 id="sound-freq"
@@ -268,7 +278,7 @@ export default function SoundGame({
               />
             )}
           </div>
-          <div className="ml-2 mr-3 flex-1 overflow-hidden">
+          <div className="ml-1.5 mr-2 flex-1 overflow-hidden sm:ml-2 sm:mr-3">
             <WaveformVisualizer analyserRef={analyserRef} />
           </div>
         </div>
@@ -276,23 +286,23 @@ export default function SoundGame({
 
       {isIdle && (
         <>
-          <div className="flex-1 min-h-0 flex flex-col items-start justify-center gap-4 px-6">
-            <h1 className="m-0 text-center text-[4rem] w-full leading-14 font-bold tracking-tight text-white">
+          <div className="flex-1 min-h-0 flex flex-col items-start justify-center gap-3 px-4 sm:gap-4 sm:px-6">
+            <h1 className="m-0 w-full text-center text-[clamp(2.5rem,14vw,4rem)] leading-none font-bold tracking-tight text-white">
               {idleTitle}
             </h1>
-            <p className="tracking-tight text-white text-center w-full">
+            <p className="w-full text-center text-sm leading-snug tracking-tight text-white sm:text-base">
               {idleDescription}
             </p>
           </div>
           {isParticipant ? (
-            <div className="flex justify-center px-6">
+            <div className="flex justify-center px-4 sm:px-6">
               <Button
                 variant="ghost"
                 size="icon"
-                className={cn(CUBE_ACTION_BASE, "size-16")}
+                className={cn(CUBE_ACTION_BASE, "size-14 sm:size-16")}
                 type="button"
                 aria-label="Spielen"
-                onClick={() => startGame("team-participant")}
+                onClick={handleParticipantStart}
               >
                 <ChevronRight
                   aria-hidden="true"
@@ -331,9 +341,15 @@ export default function SoundGame({
       )}
 
       {isReveal && revealTarget && revealGuess && (
-        <div className="flex-1 min-h-0 flex flex-col items-center justify-center gap-2 px-6 pb-16">
-          <p className="m-0 text-center text-5xl font-bold tabular-nums tracking-tight text-white [text-shadow:0_2px_6px_rgba(0,0,0,0.35)]">
-            +<span>{roundPoints.toFixed(3)}</span>
+        <div className="flex-1 min-h-0 flex flex-col items-center justify-center gap-2 px-5 pb-14 sm:px-6 sm:pb-16">
+          <p className="m-0 text-center text-4xl font-bold tabular-nums tracking-tight text-white [text-shadow:0_2px_6px_rgba(0,0,0,0.35)] sm:text-5xl">
+            <AnimatedScore
+              key={state.scores.length}
+              value={roundPoints}
+              decimals={3}
+              prefix="+"
+              maxValue={10}
+            />
           </p>
           <div className="flex flex-col items-center gap-0.5 text-sm text-white/90 [text-shadow:0_1px_3px_rgba(0,0,0,0.4)]">
             <span className="tabular-nums">
@@ -414,22 +430,15 @@ export default function SoundGame({
       {isShow && prepStep === null && endTimeMs !== null && (
         <span
           key={`numeric-${endTimeMs}`}
-          className="pointer-events-none absolute right-4 top-3 z-2 select-none text-[3.75rem] font-bold tracking-tight text-white/95"
+          className="pointer-events-none absolute right-3 top-2 z-2 select-none text-[3rem] font-bold tracking-tight text-white/95 sm:right-4 sm:top-3 sm:text-[3.75rem]"
         >
           <CountdownDisplay endTimeMs={endTimeMs} />
         </span>
       )}
-      {isShow && prepStep !== null && (
-        <span
-          key={`prep-${prepStep}`}
-          className="pointer-events-none absolute inset-0 z-2 flex select-none items-center justify-center text-[4rem] font-bold tracking-tight text-white animate-prep-slide-up"
-        >
-          {prepText}
-        </span>
-      )}
+      {isShow && <PrepSequenceDisplay step={prepStep} text={prepText} />}
 
       {(isPick || isReveal) && (
-        <span className="pointer-events-none absolute right-4.5 top-3.5 z-2 select-none text-base font-semibold tabular-nums text-white/95 [text-shadow:0_1px_2px_rgba(0,0,0,0.35)]">
+        <span className="pointer-events-none absolute right-3 top-3 z-2 select-none text-sm font-semibold tabular-nums text-white/95 [text-shadow:0_1px_2px_rgba(0,0,0,0.35)] sm:right-4.5 sm:top-3.5 sm:text-base">
           {displayedRound}/5
         </span>
       )}
@@ -452,7 +461,7 @@ export default function SoundGame({
           size="icon"
           className={cn(
             CUBE_ACTION_BASE,
-            "absolute bottom-3 right-3 z-2 size-13",
+            "absolute bottom-3 right-3 z-2 size-12 sm:size-13",
           )}
           type="button"
           aria-label="Bestätigen"
@@ -473,7 +482,7 @@ export default function SoundGame({
             size="icon"
             className={cn(
               CUBE_ACTION_BASE,
-              "absolute bottom-3 right-3 z-2 size-13",
+              "absolute bottom-3 right-3 z-2 size-12 sm:size-13",
             )}
             type="button"
             aria-label="Weiter"

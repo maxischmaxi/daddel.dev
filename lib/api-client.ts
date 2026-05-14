@@ -1,4 +1,5 @@
 import type { Color } from "@/app/color/game-state";
+import type { TimeTarget } from "@/app/time/game-state";
 
 export type RankingEntry = {
   name: string;
@@ -247,4 +248,122 @@ export async function postSoundTeamScore(
     body: JSON.stringify(input),
   });
   return asJson<SoundTeamLobby>(res);
+}
+
+// --- Time game ---
+
+export type TimeRankingEntry = {
+  name: string;
+  totalScore: number;
+  clientId: string;
+  rank: number;
+  scores?: number[];
+  guesses?: number[];
+  targets?: TimeTarget[];
+};
+
+export type TimeGlobalRanking = {
+  top: TimeRankingEntry[];
+  you: {
+    rank: number;
+    name: string;
+    totalScore: number;
+    scores?: number[];
+    guesses?: number[];
+    targets?: TimeTarget[];
+  } | null;
+  neighbors: { above?: TimeRankingEntry; below?: TimeRankingEntry };
+  total: number;
+};
+
+export type TimeTeamLobbyEntry = {
+  name: string;
+  totalScore: number;
+  clientId: string;
+  rank: number;
+  scores: number[];
+  guesses: number[];
+};
+
+export type TimeTeamLobby = {
+  id: string;
+  createdAt: number;
+  creatorName: string;
+  targets: TimeTarget[];
+  scores: TimeTeamLobbyEntry[];
+  yourRank: number | null;
+  your: {
+    totalScore: number;
+    scores: number[];
+    guesses: number[];
+  } | null;
+};
+
+export async function postTimeGlobalScore(input: {
+  name: string;
+  clientId: string;
+  total: number;
+  targets: TimeTarget[];
+  scores: number[];
+  guesses: number[];
+}): Promise<TimeGlobalRanking> {
+  const res = await fetch("/api/time/global", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  return asJson<TimeGlobalRanking>(res);
+}
+
+export async function fetchTimeGlobalRanking(
+  clientId?: string,
+): Promise<TimeGlobalRanking> {
+  const url = clientId
+    ? `/api/time/global?clientId=${encodeURIComponent(clientId)}`
+    : "/api/time/global";
+  const res = await fetch(url);
+  return asJson<TimeGlobalRanking>(res);
+}
+
+export async function createTimeTeamGame(input: {
+  name: string;
+  clientId: string;
+  targets: TimeTarget[];
+  creatorScore: { total: number; scores: number[]; guesses: number[] };
+}): Promise<{ id: string }> {
+  const res = await fetch("/api/time/team", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  return asJson<{ id: string }>(res);
+}
+
+export async function fetchTimeTeamLobby(
+  id: string,
+  clientId?: string,
+): Promise<TimeTeamLobby> {
+  const url = clientId
+    ? `/api/time/team/${encodeURIComponent(id)}?clientId=${encodeURIComponent(clientId)}`
+    : `/api/time/team/${encodeURIComponent(id)}`;
+  const res = await fetch(url);
+  return asJson<TimeTeamLobby>(res);
+}
+
+export async function postTimeTeamScore(
+  id: string,
+  input: {
+    name: string;
+    clientId: string;
+    total: number;
+    scores: number[];
+    guesses: number[];
+  },
+): Promise<TimeTeamLobby> {
+  const res = await fetch(`/api/time/team/${encodeURIComponent(id)}`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  return asJson<TimeTeamLobby>(res);
 }

@@ -11,7 +11,7 @@ import {
   type SoundTeamLobby,
 } from "@/lib/api-client";
 import { trackEvent } from "@/lib/analytics-client";
-import { armAudioOnFirstGesture } from "@/lib/audio";
+import { armAudioOnFirstGesture, unlockAudio } from "@/lib/audio";
 import {
   getClientId,
   getStoredName,
@@ -167,23 +167,19 @@ export function useSoundGame(options: SoundGameOptions = {}) {
       }, SHOW_MS);
     };
 
-    if (state.round === 0) {
-      let i = 0;
-      const step = () => {
-        if (i >= PREP_SEQUENCE.length) {
-          revealTarget();
-          return;
-        }
-        const entry = PREP_SEQUENCE[i];
-        setPrepStep(i);
-        setPrepText(entry.text);
-        i++;
-        timeoutRef.current = setTimeout(step, entry.duration);
-      };
-      step();
-    } else {
-      revealTarget();
-    }
+    let i = 0;
+    const step = () => {
+      if (i >= PREP_SEQUENCE.length) {
+        revealTarget();
+        return;
+      }
+      const entry = PREP_SEQUENCE[i];
+      setPrepStep(i);
+      setPrepText(entry.text);
+      i++;
+      timeoutRef.current = setTimeout(step, entry.duration);
+    };
+    step();
 
     return () => {
       clearTimers();
@@ -236,6 +232,7 @@ export function useSoundGame(options: SoundGameOptions = {}) {
 
   const startGame = useCallback(
     (nextMode?: GameMode) => {
+      unlockAudio();
       const m = nextMode ?? mode;
       setMode(m);
       if (m === "solo") {
@@ -258,6 +255,7 @@ export function useSoundGame(options: SoundGameOptions = {}) {
 
   const confirmName = useCallback(
     (raw: string) => {
+      unlockAudio();
       const clean = sanitizeName(raw);
       if (clean.length === 0) return;
       setStoredName(clean);

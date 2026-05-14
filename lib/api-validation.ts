@@ -1,4 +1,5 @@
 import type { Color } from "@/app/color/game-state";
+import type { TimeTarget } from "@/app/time/game-state";
 
 export class ValidationError extends Error {
   constructor(message: string) {
@@ -94,4 +95,71 @@ export function parseFrequencyArray(v: unknown, length: number): number[] {
   if (!Array.isArray(v) || v.length !== length)
     throw new ValidationError(`expected frequency array of length ${length}`);
   return v.map(parseFrequency);
+}
+
+const DURATION_MIN_MS = 0;
+const DURATION_MAX_MS = 120_000;
+
+function isFiniteNumber(v: unknown): v is number {
+  return typeof v === "number" && Number.isFinite(v);
+}
+
+export function parseTimeTarget(v: unknown): TimeTarget {
+  if (typeof v !== "object" || v === null)
+    throw new ValidationError("time target must be an object");
+  const o = v as Record<string, unknown>;
+  const { durationMs, toneHz, pulseHz, pattern } = o;
+  if (
+    !isFiniteNumber(durationMs) ||
+    durationMs < DURATION_MIN_MS ||
+    durationMs > DURATION_MAX_MS
+  )
+    throw new ValidationError("invalid duration");
+  if (!isFiniteNumber(toneHz) || toneHz < 1 || toneHz > 20000)
+    throw new ValidationError("invalid toneHz");
+  if (!isFiniteNumber(pulseHz) || pulseHz < 0 || pulseHz > 60)
+    throw new ValidationError("invalid pulseHz");
+  if (typeof pattern !== "object" || pattern === null)
+    throw new ValidationError("invalid pattern");
+  const p = pattern as Record<string, unknown>;
+  if (
+    !isFiniteNumber(p.seed) ||
+    !isFiniteNumber(p.hue) ||
+    !isFiniteNumber(p.accentHue) ||
+    !isFiniteNumber(p.circleCount) ||
+    !isFiniteNumber(p.lineCount) ||
+    !isFiniteNumber(p.speed)
+  )
+    throw new ValidationError("invalid pattern values");
+  return {
+    durationMs,
+    toneHz,
+    pulseHz,
+    pattern: {
+      seed: p.seed,
+      hue: p.hue,
+      accentHue: p.accentHue,
+      circleCount: p.circleCount,
+      lineCount: p.lineCount,
+      speed: p.speed,
+    },
+  };
+}
+
+export function parseTimeTargetArray(v: unknown, length: number): TimeTarget[] {
+  if (!Array.isArray(v) || v.length !== length)
+    throw new ValidationError(
+      `expected time target array of length ${length}`,
+    );
+  return v.map(parseTimeTarget);
+}
+
+export function parseDurationArray(v: unknown, length: number): number[] {
+  if (!Array.isArray(v) || v.length !== length)
+    throw new ValidationError(`expected duration array of length ${length}`);
+  return v.map((n) => {
+    if (!isFiniteNumber(n) || n < DURATION_MIN_MS || n > DURATION_MAX_MS)
+      throw new ValidationError("invalid duration value");
+    return n;
+  });
 }

@@ -31,7 +31,7 @@ export default function NavMinimal() {
   const current = keyForPath(pathname);
 
   return (
-    <nav className="relative flex items-center justify-center gap-2.5 p-6 font-mono text-xs text-muted-foreground">
+    <nav className="relative flex shrink-0 items-center justify-center gap-2.5 px-4 py-4 font-mono text-xs text-muted-foreground sm:p-6">
       {navItems.map((item, i) => (
         <Fragment key={item.key}>
           {i > 0 && <span className="select-none text-border">·</span>}
@@ -48,7 +48,7 @@ export default function NavMinimal() {
           </Link>
         </Fragment>
       ))}
-      <div className="absolute right-6 top-1/2 flex -translate-y-1/2 items-center gap-1">
+      <div className="absolute right-3 top-1/2 flex -translate-y-1/2 items-center gap-1 sm:right-6">
         <ThemeToggle />
         <AudioToggle />
       </div>

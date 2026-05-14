@@ -1,6 +1,11 @@
 "use client";
 
-import { useRef, type KeyboardEvent, type PointerEvent } from "react";
+import {
+  useEffect,
+  useRef,
+  type KeyboardEvent,
+  type PointerEvent,
+} from "react";
 
 import { cn } from "@/lib/utils";
 
@@ -30,10 +35,16 @@ export default function VSlider({
   const elRef = useRef<HTMLDivElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
   const activePointerId = useRef<number | null>(null);
+  const lastValueRef = useRef(value);
+
+  useEffect(() => {
+    lastValueRef.current = value;
+  }, [value]);
 
   const commit = (v: number) => {
     const clamped = Math.max(min, Math.min(max, Math.round(v)));
-    if (clamped === value) return;
+    if (clamped === lastValueRef.current) return;
+    lastValueRef.current = clamped;
     onChange(clamped);
   };
 
@@ -57,12 +68,16 @@ export default function VSlider({
 
   const handlePointerMove = (e: PointerEvent<HTMLDivElement>) => {
     if (activePointerId.current !== e.pointerId) return;
+    e.preventDefault();
     setValueFromClientY(e.clientY);
   };
 
   const handlePointerUp = (e: PointerEvent<HTMLDivElement>) => {
     if (activePointerId.current !== e.pointerId) return;
     activePointerId.current = null;
+    if (elRef.current?.hasPointerCapture(e.pointerId)) {
+      elRef.current.releasePointerCapture(e.pointerId);
+    }
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
@@ -108,6 +123,7 @@ export default function VSlider({
         "relative h-full w-8 cursor-pointer touch-none select-none outline-none focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-white/85",
         className,
       )}
+      style={{ touchAction: "none" }}
       role="slider"
       tabIndex={0}
       aria-orientation="vertical"
@@ -119,6 +135,9 @@ export default function VSlider({
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
       onPointerCancel={handlePointerUp}
+      onLostPointerCapture={() => {
+        activePointerId.current = null;
+      }}
       onKeyDown={handleKeyDown}
     >
       <div
@@ -128,7 +147,7 @@ export default function VSlider({
       />
       <div
         className={cn(
-          "pointer-events-none absolute left-1/2 h-3.5 w-3.5 -translate-x-1/2 translate-y-1/2 rounded-full bg-white",
+          "pointer-events-none absolute left-1/2 size-3.5 -translate-x-1/2 translate-y-1/2 rounded-full bg-white",
           handleClassName,
         )}
         style={{ bottom: `${ratio * 100}%` }}

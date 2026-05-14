@@ -99,7 +99,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang={siteConfig.language} className={inter.variable} suppressHydrationWarning>
-      <body className="flex min-h-screen flex-col bg-background font-sans text-sm leading-normal text-foreground antialiased">
+      <body className="flex min-h-screen min-h-dvh flex-col bg-background font-sans text-sm leading-normal text-foreground antialiased">
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
@@ -107,7 +107,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <NavMinimal />
-          <main className="flex flex-1 flex-col items-center justify-center gap-6 px-6 py-10">
+          <main className="flex min-h-0 flex-1 flex-col items-center justify-center gap-4 px-3 py-3 sm:gap-6 sm:px-6 sm:py-10">
             {children}
           </main>
           <Footer />

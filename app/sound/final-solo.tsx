@@ -5,13 +5,14 @@ import { Home, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
+import { useBingClick } from "@/app/color/use-click-tone";
 import { useHoverTone, type ToneSpec } from "@/app/color/use-hover-tone";
 
 import BreakdownItem from "./breakdown-item";
 import { type Sound } from "./game-state";
 
 const CUBE_ACTION_BASE =
-  "rounded-full bg-white text-cube-dark border border-[hsl(220_13%_78%)] shadow-[0_1px_2px_rgba(0,0,0,0.06)] hover:bg-[hsl(210_40%_96.1%)] hover:text-cube-dark active:scale-96 focus-visible:outline-none focus-visible:shadow-[0_0_0_2px_var(--background),0_0_0_4px_var(--ring)] transition-all duration-150";
+  "touch-manipulation rounded-full bg-white text-cube-dark border border-[hsl(220_13%_78%)] shadow-[0_1px_2px_rgba(0,0,0,0.06)] hover:bg-[hsl(210_40%_96.1%)] hover:text-cube-dark active:scale-96 focus-visible:outline-none focus-visible:shadow-[0_0_0_2px_var(--background),0_0_0_4px_var(--ring)] transition-all duration-150";
 
 const AURORA_GRADIENT =
   "conic-gradient(from var(--aurora-angle), hsl(0,100%,60%), hsl(60,100%,60%), hsl(120,100%,50%), hsl(180,100%,50%), hsl(240,100%,65%), hsl(300,100%,60%), hsl(360,100%,60%))";
@@ -54,22 +55,24 @@ export function FinalSolo({
 }: Props) {
   const homeHoverTone = useHoverTone(HOME_TONE);
   const replayHoverTone = useHoverTone(REPLAY_TONE);
+  const handleHomeClick = useBingClick<HTMLButtonElement>(onHome);
+  const handleReplayClick = useBingClick<HTMLButtonElement>(onReplay);
 
   return (
-    <div className="flex flex-1 min-h-0 flex-col gap-3 px-5">
+    <div className="flex flex-1 min-h-0 flex-col gap-2 px-4 sm:gap-3 sm:px-5">
       <div className="flex flex-col items-center gap-0.5">
         <h2 className="m-0 text-xs font-semibold uppercase tracking-[0.18em] text-white/60">
           Geschafft
         </h2>
         <div className="flex items-baseline gap-1.5">
-          <span className="text-[3.25rem] font-bold leading-none tracking-tight tabular-nums text-white">
+          <span className="text-4xl font-bold leading-none tracking-tight tabular-nums text-white sm:text-[3.25rem]">
             {totalScore.toFixed(3)}
           </span>
           <span className="text-base font-medium tabular-nums text-white/60">
             / 50
           </span>
         </div>
-        <div className="flex items-center gap-2 text-sm">
+        <div className="flex items-center gap-2 text-xs sm:text-sm">
           <span className="rounded-full bg-white/10 px-2 py-0.5 text-xs font-semibold tabular-nums text-white">
             {Math.round((totalScore / 50) * 100)}%
           </span>
@@ -79,7 +82,7 @@ export function FinalSolo({
         </div>
       </div>
 
-      <ol className="m-0 flex w-full list-none flex-col border-t border-white/10 p-0 pt-1">
+      <ol className="m-0 flex min-h-0 w-full flex-1 list-none flex-col overflow-auto border-t border-white/10 p-0 pt-1">
         {targets.map((target, i) =>
           guesses[i] !== undefined && scores[i] !== undefined ? (
             <BreakdownItem
@@ -93,14 +96,14 @@ export function FinalSolo({
         )}
       </ol>
 
-      <div className="mt-auto flex items-center justify-center gap-6 pt-1">
+      <div className="mt-auto flex items-center justify-center gap-5 pt-1 sm:gap-6">
         <Button
           variant="ghost"
           size="icon"
-          className={cn(CUBE_ACTION_BASE, "group relative size-16")}
+          className={cn(CUBE_ACTION_BASE, "group relative size-14 sm:size-16")}
           type="button"
           aria-label="Zur Startseite"
-          onClick={onHome}
+          onClick={handleHomeClick}
           {...homeHoverTone}
         >
           <span
@@ -127,10 +130,10 @@ export function FinalSolo({
         <Button
           variant="ghost"
           size="icon"
-          className={cn(CUBE_ACTION_BASE, "group relative size-16")}
+          className={cn(CUBE_ACTION_BASE, "group relative size-14 sm:size-16")}
           type="button"
           aria-label="Nochmal spielen"
-          onClick={onReplay}
+          onClick={handleReplayClick}
           {...replayHoverTone}
         >
           <span

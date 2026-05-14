@@ -154,10 +154,52 @@
   }
 }
 
+@keyframes time-spiral-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes time-spiral-flow {
+  to {
+    stroke-dashoffset: var(--time-flow-end, -200);
+  }
+}
+
+@keyframes time-spiral-core {
+  0%,
+  100% {
+    transform: scale(0.92);
+    opacity: 0.68;
+  }
+  50% {
+    transform: scale(1.08);
+    opacity: 1;
+  }
+}
+
+@keyframes time-spiral-ring {
+  0%,
+  100% {
+    transform: scale(0.86);
+    stroke-opacity: 0.15;
+  }
+  50% {
+    transform: scale(1.18);
+    stroke-opacity: 0.55;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-time-motion] {
+    animation: none !important;
+  }
+}
+
 @layer base {
   html,
   body {
-    height: 100%;
+    min-height: 100%;
   }
   body {
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
@@ -185,5 +227,31 @@
     margin: 0;
     padding: 0;
     list-style: none;
+  }
+}
+
+@layer utilities {
+  .game-shell-color,
+  .game-shell-time {
+    width: min(100%, 31.25rem, max(18rem, calc((100vh - 9rem) / 1.05)));
+    width: min(100%, 31.25rem, max(18rem, calc((100dvh - 9rem) / 1.05)));
+  }
+
+  .game-shell-sound {
+    width: min(100%, 30rem, max(17rem, calc((100vh - 9rem) / 1.7)));
+    width: min(100%, 30rem, max(17rem, calc((100dvh - 9rem) / 1.7)));
+  }
+
+  @media (min-width: 640px) {
+    .game-shell-color,
+    .game-shell-time {
+      width: min(100%, 31.25rem, max(18rem, calc((100vh - 11rem) / 0.8)));
+      width: min(100%, 31.25rem, max(18rem, calc((100dvh - 11rem) / 0.8)));
+    }
+
+    .game-shell-sound {
+      width: min(100%, 30rem, max(17rem, calc((100vh - 11rem) / 1.7)));
+      width: min(100%, 30rem, max(17rem, calc((100dvh - 11rem) / 1.7)));
+    }
   }
 }

@@ -17,7 +17,7 @@ const EVENTS: readonly AnalyticsEvent[] = [
   "score_submission_failed",
 ] as const;
 
-const GAMES: readonly AnalyticsGame[] = ["color", "sound"] as const;
+const GAMES: readonly AnalyticsGame[] = ["color", "sound", "time"] as const;
 
 const MODES: readonly AnalyticsMode[] = [
   "solo",

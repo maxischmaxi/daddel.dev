@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, type PointerEvent } from "react";
 
 import {
   armAudioOnFirstGesture,
@@ -243,10 +243,31 @@ export function useHoverEarthquake() {
     voiceRef.current = null;
   }, []);
 
+  const handlePointerEnter = useCallback(
+    (e: PointerEvent<HTMLElement>) => {
+      if (e.pointerType !== "mouse") return;
+      start();
+    },
+    [start],
+  );
+
+  const handlePointerLeave = useCallback(
+    (e: PointerEvent<HTMLElement>) => {
+      if (e.pointerType !== "mouse") return;
+      stop();
+    },
+    [stop],
+  );
+
   useEffect(() => {
     armAudioOnFirstGesture();
     return dispose;
   }, [dispose]);
 
-  return { onMouseEnter: start, onMouseLeave: stop };
+  return {
+    onPointerEnter: handlePointerEnter,
+    onPointerLeave: handlePointerLeave,
+    onPointerCancel: stop,
+    onBlur: stop,
+  };
 }

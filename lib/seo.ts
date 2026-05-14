@@ -23,6 +23,7 @@ export const siteConfig = {
     "ohne Cookies",
     "Color Game",
     "Sound Game",
+    "Time Game",
     "Daddel",
   ],
 } as const;

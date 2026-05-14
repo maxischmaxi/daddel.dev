@@ -28,18 +28,18 @@ export default function BreakdownItem({
 
   return (
     <li
-      className="flex items-center gap-3 py-1.5"
+      className="flex items-center gap-2 py-1 sm:gap-3 sm:py-1.5"
       aria-label={`Runde ${index + 1}: ${points.toFixed(3)} Punkte`}
     >
-      <span className="w-6 shrink-0 text-right text-xs tabular-nums text-muted-foreground">
+      <span className="w-5 shrink-0 text-right text-xs tabular-nums text-muted-foreground sm:w-6">
         {index + 1}.
       </span>
-      <span className="w-12 shrink-0 text-sm font-semibold leading-none tabular-nums text-foreground">
+      <span className="w-11 shrink-0 text-xs font-semibold leading-none tabular-nums text-foreground sm:w-12 sm:text-sm">
         {points.toFixed(3)}
       </span>
       <div
         aria-hidden="true"
-        className="relative h-9 w-2.5 shrink-0 overflow-hidden rounded-full"
+        className="relative h-8 w-2.5 shrink-0 overflow-hidden rounded-full sm:h-9"
         style={{ background: TRACK_BG }}
       >
         <span
@@ -51,7 +51,7 @@ export default function BreakdownItem({
           style={{ bottom: `${guessRatio * 100}%` }}
         />
       </div>
-      <div className="flex min-w-0 flex-1 flex-col text-xs leading-tight text-muted-foreground">
+      <div className="flex min-w-0 flex-1 flex-col text-[0.7rem] leading-tight text-muted-foreground sm:text-xs">
         <span className="tabular-nums">
           <span className="text-foreground">Ziel</span> {formatHz(target.freq)}
         </span>
