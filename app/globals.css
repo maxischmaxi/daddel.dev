@@ -243,6 +243,11 @@
     width: min(100%, 30rem, max(17rem, calc((100dvh - 9rem) / 1.7)));
   }
 
+  .game-shell-chess {
+    width: min(100%, 34rem, max(18rem, calc(100vh - 15rem)));
+    width: min(100%, 34rem, max(18rem, calc(100dvh - 15rem)));
+  }
+
   @media (min-width: 640px) {
     .game-shell-color,
     .game-shell-time {
@@ -254,6 +259,11 @@
     .game-shell-angle {
       width: min(100%, 30rem, max(17rem, calc((100vh - 11rem) / 1.7)));
       width: min(100%, 30rem, max(17rem, calc((100dvh - 11rem) / 1.7)));
+    }
+
+    .game-shell-chess {
+      width: min(100%, 34rem, max(20rem, calc(100vh - 17rem)));
+      width: min(100%, 34rem, max(20rem, calc(100dvh - 17rem)));
     }
   }
 }

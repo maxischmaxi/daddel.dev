@@ -8,7 +8,14 @@ export const siteConfig = {
   themeColorDark: "#1f2022",
 } as const;
 
-export type SitePath = "/" | "/sound" | "/time" | "/impressum" | "/datenschutz";
+export type SitePath =
+  | "/"
+  | "/sound"
+  | "/time"
+  | "/angle"
+  | "/chess"
+  | "/impressum"
+  | "/datenschutz";
 
 export function absoluteUrl(path: string): string {
   if (path.startsWith("http")) return path;

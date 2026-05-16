@@ -34,6 +34,8 @@ export type Dictionary = {
     timeDescription: string;
     angleTitle: string;
     angleDescription: string;
+    chessTitle: string;
+    chessDescription: string;
     teamColorTitle: string;
     teamColorDescription: string;
     teamSoundTitle: string;
@@ -147,6 +149,26 @@ export type Dictionary = {
       degreesUnit: string;
       offByLabel: string;
       submitLabel: string;
+    };
+    chess: {
+      idleTitle: string;
+      intro: string;
+      difficultyLabel: string;
+      easyLabel: string;
+      mediumLabel: string;
+      hardLabel: string;
+      boardAria: string;
+      loadingEngine: string;
+      stockfishThinking: string;
+      yourTurn: string;
+      check: string;
+      youWon: string;
+      stockfishWon: string;
+      draw: string;
+      engineError: string;
+      localEngineLabel: string;
+      lastMoveTemplate: string;
+      newGame: string;
     };
   };
 
